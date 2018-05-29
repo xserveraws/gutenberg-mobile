@@ -8,6 +8,8 @@
   },
   "devDependencies": {
     "@wordpress/babel-preset-default": "^1.1.2",
+    "appium": "^1.8.1",
+    "appium-doctor": "^1.4.3",
     "babel-eslint": "^8.2.2",
     "babel-plugin-react-native-classname-to-style": "^1.2.1",
     "babel-plugin-react-native-platform-specific-extensions": "^1.0.1",
@@ -32,7 +34,8 @@
     "react-dom": "^16.2.0",
     "react-native-sass-transformer": "^1.1.1",
     "react-test-renderer": "16.2.0",
-    "remote-redux-devtools": "^0.5.12"
+    "remote-redux-devtools": "^0.5.12",
+    "wd": "^1.7.0"
   },
   "scripts": {
     "check-gb-unused-babelrc": "cd gutenberg/; git ls-files --error-unmatch .babelrc 2>/dev/null; ss=$?; cd ..; (if [[ $ss -gt 0 ]]; then (exit 0); else (echo \"'.babelrc' is tracked in Gutenberg, cannot overwrite!\"; exit 1); fi)",
@@ -44,12 +47,15 @@
     "ios": "react-native run-ios",
     "test": "cross-env NODE_ENV=test node node_modules/jest/bin/jest.js --verbose --config jest.config.js",
     "test:debug": "cross-env NODE_ENV=test node --inspect-brk node_modules/jest/bin/jest.js --runInBand --verbose --config jest.config.js",
+    "test:rnandroid": "cross-env NODE_ENV=test node node_modules/jest/bin/jest.js --verbose --config jest.config.js __device-tests__/test.rn.android.js",
     "flow": "flow",
     "prettier": "prettier-eslint --write $npm_package_config_jsfiles $npm_package_config_scssfiles",
     "clean": "yarn test --clearCache; watchman watch-del-all; rm -rf node_modules; rm -f yarn.lock; rm -rf $TMPDIR/react-*; rm -rf $TMPDIR/metro-cache-*; rm -rf $TMPDIR/jest_*",
     "clean:install": "yarn clean; yarn",
     "lint": "eslint $npm_package_config_jsfiles",
-    "lint:fix": "eslint $npm_package_config_jsfiles --fix"
+    "lint:fix": "eslint $npm_package_config_jsfiles --fix",
+    "appium": "appium",
+    "appium:doctor": "appium-doctor"
   },
   "dependencies": {
     "@wordpress/i18n": "^1.1.0",

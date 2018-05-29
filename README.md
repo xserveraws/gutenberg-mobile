@@ -57,6 +57,14 @@ Append `--config <jest config json file>` to specify a config file other than th
 
 Then, open `chrome://inspect` in Chrome to attach the debugger (look into the "Remote Target" section). While testing/developing, feel free to springle `debugger` statements anywhere in the code that you'd like the debugger to break.
 
+#### Appium tests
+
+* Run `yarn run appium-doctor` and make sure it's all green. Install Carthage, Xcode command line tools or others if needed.
+* Run the Appium server by `yarn run appium` (in a different terminal)
+* Build the app (`yarn android`)
+* Run the device tests (`yarn test:rnandroid`)
+* You can now stop the Appium server (ctrl-c in its terminal)
+
 #### `npm run ios`
 
 Like `npm start`, but also attempts to open your app in the iOS Simulator if you're on a Mac and have it installed.

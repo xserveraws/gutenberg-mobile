@@ -150,6 +150,7 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 				<View style={ styles[ 'aztec-container' ] }>
 					<Text>Aztec view below</Text>
 					<RCTAztecView
+						accessibilityLabel="aztec-view"
 						{ ...this.props }
 						style={ [
 							styles[ 'aztec-editor' ],
@@ -166,13 +167,18 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 				<View style={ styles.switch }>
 					<Text>View html output</Text>
 					<Switch
+						accessibilityLabel="html-switch"
 						activeText={ 'On' }
 						inActiveText={ 'Off' }
 						value={ this.state.showHtml }
 						onValueChange={ ( value ) => this.setState( { showHtml: value } ) }
 					/>
 				</View>
-				{ this.state.showHtml && <Text style={ styles.htmlView }>{ this.serializeToHtml() }</Text> }
+				{ this.state.showHtml && (
+					<Text style={ styles.htmlView } accessibilityLabel="html-view">
+						{ this.serializeToHtml() }
+					</Text>
+				) }
 				{ ! this.state.showHtml && list }
 			</View>
 		);
