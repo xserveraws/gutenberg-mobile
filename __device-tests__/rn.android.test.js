@@ -14,14 +14,14 @@ const config = {
 describe( 'Device RN tests', () => {
 	let driver;
 
-	beforeAll( async () => {
+	beforeEach( async () => {
 		driver = wd.promiseChainRemote( APPIUM_SERVER_ADDRESS, APPIUM_SERVER_PORT );
 		await driver.init( config );
 		await driver.status();
 		await driver.sleep( 10000 ); // wait for app to load
 	} );
 
-	afterAll( async () => {
+	afterEach( async () => {
 		await driver.quit();
 	} );
 
