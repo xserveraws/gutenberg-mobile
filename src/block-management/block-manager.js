@@ -23,7 +23,6 @@ export type BlockListType = {
 	moveBlockDownAction: string => mixed,
 	deleteBlockAction: string => mixed,
 	blocks: Array<BlockType>,
-	aztechtml: string,
 	refresh: boolean,
 };
 

@@ -4,7 +4,7 @@
  */
 
 import React from 'react';
-import { View, Text, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, TextInput, TouchableWithoutFeedback } from 'react-native';
 import RCTAztecView from 'react-native-aztec';
 import Toolbar from './toolbar';
 
@@ -23,6 +23,8 @@ type PropsType = BlockType & {
 type StateType = {
 	selected: boolean,
 	focused: boolean,
+	htmltext: string,
+	aztectext: string,
 	aztecheight: number,
 };
 
@@ -34,6 +36,8 @@ export default class BlockHolder extends React.Component<PropsType, StateType> {
 		this.state = {
 			selected: false,
 			focused: false,
+			htmltext: props.attributes.content,
+			aztectext: props.attributes.content,
 			aztecheight: _minHeight,
 		};
 	}
@@ -71,25 +75,59 @@ export default class BlockHolder extends React.Component<PropsType, StateType> {
 			);
 		} else if ( this.props.name === 'aztec' ) {
 			return (
-				<RCTAztecView
-					accessibilityLabel="aztec-view"
-					style={ [
-						styles[ 'aztec-editor' ],
-						{ minHeight: Math.max( _minHeight, this.state.aztecheight ) },
-					] }
-					text={ this.props.attributes.content }
-					onContentSizeChange={ ( event ) => {
-						this.setState( { ...this.state, aztecheight: event.nativeEvent.contentSize.height } );
-					} }
-					onChange={ ( event ) => {
-						this.props.onChange( this.props.uid, {
-							...this.props.attributes,
-							content: event.nativeEvent.text,
-						} );
-					} }
-					color={ 'black' }
-					maxImagesWidth={ 200 }
-				/>
+				<View>
+					<TouchableWithoutFeedback
+						accessibilityLabel="sync-to-aztec"
+						onPress={ () => {
+							this.props.onChange( this.props.uid, {
+								...this.props.attributes,
+								content: this.state.htmltext,
+							} );
+							this.setState( { ...this.state, aztectext: this.state.htmltext } );
+						} }
+					>
+						<View>
+							<Text>Tap here to sync to Aztec</Text>
+						</View>
+					</TouchableWithoutFeedback>
+					<TouchableWithoutFeedback
+						accessibilityLabel="sync-from-aztec"
+						onPress={ () => {
+							this.props.onChange( this.props.uid, {
+								...this.props.attributes,
+								content: this.state.aztectext,
+							} );
+							this.setState( { ...this.state, htmltext: this.state.aztectext } );
+						} }
+					>
+						<View>
+							<Text>Tap here to sync from Aztec</Text>
+						</View>
+					</TouchableWithoutFeedback>
+					<TextInput
+						accessibilityLabel="aztec-html"
+						value={ this.state.htmltext }
+						onChangeText={ ( text ) => {
+							this.setState( { ...this.state, htmltext: text } );
+						} }
+					/>
+					<RCTAztecView
+						accessibilityLabel="aztec-view"
+						style={ [
+							styles[ 'aztec-editor' ],
+							{ minHeight: Math.max( _minHeight, this.state.aztecheight ) },
+						] }
+						text={ this.state.aztectext }
+						onContentSizeChange={ ( event ) => {
+							this.setState( { ...this.state, aztecheight: event.nativeEvent.contentSize.height } );
+						} }
+						onChange={ ( event ) => {
+							this.setState( { ...this.state, aztectext: event.nativeEvent.text } );
+						} }
+						color={ 'black' }
+						maxImagesWidth={ 200 }
+					/>
+				</View>
 			);
 		}
 
