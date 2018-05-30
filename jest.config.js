@@ -10,10 +10,15 @@ if ( process.env.TEST_RN_PLATFORM ) {
 	console.log( 'Setting RN platform to: default (' + defaultPlatform + ')' );
 }
 
+const ignorePaths = [ '/node_modules/', '/gutenberg/' ];
+if ( ! process.env.TEST_RN_ON_DEVICE ) {
+	ignorePaths.push( '__device-tests__' );
+}
+
 module.exports = {
 	preset: 'jest-react-native',
 	testEnvironment: 'jsdom',
-	testPathIgnorePatterns: [ '/node_modules/', '/gutenberg/' ],
+	testPathIgnorePatterns: ignorePaths,
 	moduleFileExtensions: [
 		'native.js',
 		'android.js',
