@@ -14,6 +14,7 @@ import styles from './block-holder.scss';
 
 // Gutenberg imports
 import { getBlockType } from '@gutenberg/blocks/api';
+import { parse } from '@gutenberg/blocks';
 
 type PropsType = BlockType & {
 	onChange: ( uid: string, attributes: mixed ) => void,
@@ -23,8 +24,6 @@ type PropsType = BlockType & {
 type StateType = {
 	selected: boolean,
 	focused: boolean,
-	htmltext: string,
-	aztectext: string,
 	aztecheight: number,
 };
 
@@ -36,8 +35,6 @@ export default class BlockHolder extends React.Component<PropsType, StateType> {
 		this.state = {
 			selected: false,
 			focused: false,
-			htmltext: props.attributes.content,
-			aztectext: props.attributes.content,
 			aztecheight: _minHeight,
 		};
 	}
@@ -74,42 +71,29 @@ export default class BlockHolder extends React.Component<PropsType, StateType> {
 				/>
 			);
 		} else if ( this.props.name === 'aztec' ) {
+			let isValidGB = false;
+			try {
+				const parsed = parse( this.props.attributes.content );
+
+				isValidGB = parsed[ 0 ].isValid;
+			} catch ( error ) {
+				// nothing special here. Just have the resulting isValidGB be `false`
+				// console.log( error );
+			}
+
+			const parseResultUi = isValidGB ? (
+				<Text accessibilityLabel="parse-valid">Parse result: valid</Text>
+			) : (
+				<Text accessibilityLabel="parse-invalid">Parse result: invalid!</Text>
+			);
+
 			return (
 				<View>
-					<TouchableWithoutFeedback
-						accessibilityLabel="sync-to-aztec"
-						onPress={ () => {
-							this.props.onChange( this.props.uid, {
-								...this.props.attributes,
-								content: this.state.htmltext,
-							} );
-							this.setState( { ...this.state, aztectext: this.state.htmltext } );
-						} }
-					>
-						<View>
-							<Text>Tap here to sync to Aztec</Text>
-						</View>
-					</TouchableWithoutFeedback>
-					<TouchableWithoutFeedback
-						accessibilityLabel="sync-from-aztec"
-						onPress={ () => {
-							this.props.onChange( this.props.uid, {
-								...this.props.attributes,
-								content: this.state.aztectext,
-							} );
-							this.setState( { ...this.state, htmltext: this.state.aztectext } );
-						} }
-					>
-						<View>
-							<Text>Tap here to sync from Aztec</Text>
-						</View>
-					</TouchableWithoutFeedback>
+					<View>{ parseResultUi }</View>
 					<TextInput
 						accessibilityLabel="aztec-html"
-						value={ this.state.htmltext }
-						onChangeText={ ( text ) => {
-							this.setState( { ...this.state, htmltext: text } );
-						} }
+						multiline={ true }
+						value={ this.props.attributes.content }
 					/>
 					<RCTAztecView
 						accessibilityLabel="aztec-view"
@@ -117,12 +101,15 @@ export default class BlockHolder extends React.Component<PropsType, StateType> {
 							styles[ 'aztec-editor' ],
 							{ minHeight: Math.max( _minHeight, this.state.aztecheight ) },
 						] }
-						text={ this.state.aztectext }
+						text={ this.props.attributes.content }
 						onContentSizeChange={ ( event ) => {
 							this.setState( { ...this.state, aztecheight: event.nativeEvent.contentSize.height } );
 						} }
 						onChange={ ( event ) => {
-							this.setState( { ...this.state, aztectext: event.nativeEvent.text } );
+							this.props.onChange( this.props.uid, {
+								...this.props.attributes,
+								content: event.nativeEvent.text,
+							} );
 						} }
 						color={ 'black' }
 						maxImagesWidth={ 200 }

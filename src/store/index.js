@@ -49,11 +49,21 @@ const initialState: StateType = {
 	// If not it should be created from a string parsing (commented HTML to json).
 	blocks: [
 		{
-			uid: '0',
+			uid: 'aztec0',
 			name: 'aztec',
 			isValid: true,
 			attributes: {
-				content: 'This is text rendered <b>in Aztec!</b>',
+				content: initialCodeBlockHtml,
+			},
+			innerBlocks: [],
+			focused: false,
+		},
+		{
+			uid: 'aztec1',
+			name: 'aztec',
+			isValid: true,
+			attributes: {
+				content: initialMoreBlockHtml,
 			},
 			innerBlocks: [],
 			focused: false,
