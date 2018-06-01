@@ -21,6 +21,7 @@ global.document = doc;
 
 // Override the default console.error to demote the errors coming from the GB parser.
 // TODO: change the GB code to a more flexible solution that doesn't require overriding the default console.
+/* eslint-disable no-console */
 const cerr = console.error;
 console.error = function( logMessage ) {
 	if ( logMessage.startsWith( 'Block validation:' ) ) {
@@ -29,3 +30,4 @@ console.error = function( logMessage ) {
 		cerr( logMessage );
 	}
 };
+/* eslint-enable no-console */
