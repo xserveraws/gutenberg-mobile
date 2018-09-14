@@ -5,13 +5,11 @@
 
 // Gutenberg imports
 import { registerCoreBlocks } from '@wordpress/block-library';
-import {
-	parse,
-	registerBlockType,
-	setUnknownTypeHandlerName,
-} from '@wordpress/blocks';
+import { parse, registerBlockType, setUnknownTypeHandlerName } from '@wordpress/blocks';
 
 import { createStore } from 'redux';
+import { DataSource } from 'react-native-recyclerview-list';
+
 import { reducer } from './reducers';
 
 import * as UnsupportedBlock from '../block-types/unsupported-block/';
@@ -27,8 +25,13 @@ export type BlockType = {
 
 export type StateType = {
 	blocks: Array<BlockType>,
+	recyclerViewDataSource: DataSource,
 	refresh: boolean,
 };
+
+export function newRecyclerViewDataSource( blocks: Array<BlockType> ): DataSource {
+	return new DataSource( blocks, ( item: BlockType ) => item.clientId );
+}
 
 registerCoreBlocks();
 registerBlockType( UnsupportedBlock.name, UnsupportedBlock.settings );
@@ -77,12 +80,13 @@ else:
 <!-- /wp:p4ragraph -->
 `;
 
-const initialBlocks = parse( initialHtml );
+const initialBlocks = parse( initialHtml ).map( ( block ) => ( { ...block, focused: false } ) );
 
 export const initialState: StateType = {
 	// TODO: get blocks list block state should be externalized (shared with Gutenberg at some point?).
 	// If not it should be created from a string parsing (commented HTML to json).
-	blocks: initialBlocks.map( ( block ) => ( { ...block, focused: false } ) ),
+	blocks: initialBlocks,
+	recyclerViewDataSource: newRecyclerViewDataSource( initialBlocks ),
 	refresh: false,
 };
 

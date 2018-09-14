@@ -6,7 +6,13 @@
 import { find, findIndex, reduce } from 'lodash';
 
 import ActionTypes from '../actions/ActionTypes';
+import { newRecyclerViewDataSource } from '../';
+
+// TODO: try to get eslint-plugin-import to work
+// Disable reason: GB eslint config doesn't handle Flow type imports alongside normal imports.
+/* eslint-disable no-duplicate-imports */
 import type { StateType } from '../';
+
 import type { BlockActionType } from '../actions';
 import { parse } from '@wordpress/blocks';
 
@@ -25,14 +31,22 @@ function findBlockIndex( blocks, clientId: string ) {
 /*
  * insert block into blocks[], below / after block having clientIdAbove
 */
-function insertBlock( blocks, block, clientIdAbove ) {
+function insertBlock( blocks, block, clientIdAbove ): number {
 	// TODO we need to set focused: true and search for the currently focused block and
 	// set that one to `focused: false`.
-	blocks.splice( findBlockIndex( blocks, clientIdAbove ) + 1, 0, block );
+	const index = findBlockIndex( blocks, clientIdAbove ) + 1;
+	blocks.splice( index, 0, block );
+	return index;
 }
 
+const emptyBlocksList = [];
+
 export const reducer = (
-	state: StateType = { blocks: [], refresh: false },
+	state: StateType = {
+		blocks: emptyBlocksList,
+		recyclerViewDataSource: newRecyclerViewDataSource( emptyBlocksList ),
+		refresh: false,
+	},
 	action: BlockActionType
 ) => {
 	const blocks = [ ...state.blocks ];
@@ -71,12 +85,17 @@ export const reducer = (
 
 			// Otherwise merge attributes into state
 			const index = findBlockIndex( blocks, action.clientId );
-			blocks[ index ] = {
+			const updatedBlock = {
 				...block,
 				attributes: nextAttributes,
 			};
-
-			return { blocks: blocks, refresh: ! state.refresh };
+			blocks[ index ] = updatedBlock;
+			state.recyclerViewDataSource.set( index, updatedBlock );
+			return {
+				blocks: blocks,
+				recyclerViewDataSource: state.recyclerViewDataSource,
+				refresh: ! state.refresh,
+			};
 		}
 		case ActionTypes.BLOCK.FOCUS: {
 			const destBlock = findBlock( blocks, action.clientId );
@@ -89,7 +108,11 @@ export const reducer = (
 
 			// Select or deselect pressed block
 			destBlock.focused = ! destBlockState;
-			return { blocks: blocks, refresh: ! state.refresh };
+			return {
+				blocks: blocks,
+				recyclerViewDataSource: state.recyclerViewDataSource,
+				refresh: ! state.refresh,
+			};
 		}
 		case ActionTypes.BLOCK.MOVE_UP: {
 			if ( blocks[ 0 ].clientId === action.clientId ) {
@@ -100,7 +123,12 @@ export const reducer = (
 			const tmp = blocks[ index ];
 			blocks[ index ] = blocks[ index - 1 ];
 			blocks[ index - 1 ] = tmp;
-			return { blocks: blocks, refresh: ! state.refresh };
+			state.recyclerViewDataSource.moveUp( index );
+			return {
+				blocks: blocks,
+				recyclerViewDataSource: state.recyclerViewDataSource,
+				refresh: ! state.refresh,
+			};
 		}
 		case ActionTypes.BLOCK.MOVE_DOWN: {
 			if ( blocks[ blocks.length - 1 ].clientId === action.clientId ) {
@@ -111,22 +139,42 @@ export const reducer = (
 			const tmp = blocks[ index ];
 			blocks[ index ] = blocks[ index + 1 ];
 			blocks[ index + 1 ] = tmp;
-			return { blocks: blocks, refresh: ! state.refresh };
+			state.recyclerViewDataSource.moveDown( index );
+			return {
+				blocks: blocks,
+				recyclerViewDataSource: state.recyclerViewDataSource,
+				refresh: ! state.refresh,
+			};
 		}
 		case ActionTypes.BLOCK.DELETE: {
 			const index = findBlockIndex( blocks, action.clientId );
 			blocks.splice( index, 1 );
-			return { blocks: blocks, refresh: ! state.refresh };
+			state.recyclerViewDataSource.splice( index, 1 );
+			return {
+				blocks: blocks,
+				recyclerViewDataSource: state.recyclerViewDataSource,
+				refresh: ! state.refresh,
+			};
 		}
 		case ActionTypes.BLOCK.CREATE: {
 			// TODO we need to set focused: true and search for the currently focused block and
 			// set that one to `focused: false`.
-			insertBlock( blocks, action.block, action.clientIdAbove );
-			return { blocks: blocks, refresh: ! state.refresh };
+			const index = insertBlock( blocks, action.block, action.clientIdAbove );
+			state.recyclerViewDataSource.splice( index, 0, action.block );
+			return {
+				blocks: blocks,
+				recyclerViewDataSource: state.recyclerViewDataSource,
+				refresh: ! state.refresh,
+			};
 		}
 		case ActionTypes.BLOCK.PARSE: {
 			const parsed = parse( action.html );
-			return { blocks: parsed, refresh: ! state.refresh, fullparse: true };
+			return {
+				blocks: parsed,
+				recyclerViewDataSource: newRecyclerViewDataSource( parsed ),
+				refresh: ! state.refresh,
+				fullparse: true,
+			};
 		}
 		default:
 			return state;
