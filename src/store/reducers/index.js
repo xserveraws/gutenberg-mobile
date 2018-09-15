@@ -6,7 +6,7 @@
 import { find, findIndex, reduce } from 'lodash';
 
 import ActionTypes from '../actions/ActionTypes';
-import { newListAnimator, setListAnimatorCallbacks } from '../';
+import { newListAnimator } from '../';
 
 // TODO: try to get eslint-plugin-import to work
 // Disable reason: GB eslint config doesn't handle Flow type imports alongside normal imports.
@@ -26,6 +26,11 @@ function findBlockIndex( blocks, clientId: string ) {
 	return findIndex( blocks, ( obj ) => {
 		return obj.clientId === clientId;
 	} );
+}
+
+function setListAnimatorCallbacks( listAnimator: DataSource, blocks: Array<BlockType> ) {
+	listAnimator.setGetter( ( index ) => blocks[ index ] );
+	listAnimator.setSizer( () => blocks.length );
 }
 
 /*

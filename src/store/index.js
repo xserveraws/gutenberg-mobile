@@ -38,11 +38,6 @@ export function newListAnimator( blocks: Array<BlockType> ): DataSource {
 	);
 }
 
-export function setListAnimatorCallbacks( listAnimator: DataSource, blocks: Array<BlockType> ) {
-	listAnimator.setGetter( ( index ) => blocks[ index ] );
-	listAnimator.setSizer( () => blocks.length );
-}
-
 registerCoreBlocks();
 registerBlockType( UnsupportedBlock.name, UnsupportedBlock.settings );
 setUnknownTypeHandlerName( UnsupportedBlock.name );
