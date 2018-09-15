@@ -33,7 +33,7 @@ export type BlockListType = {
 	createBlockAction: ( string, BlockType, string ) => mixed,
 	parseBlocksAction: string => mixed,
 	blocks: Array<BlockType>,
-	recyclerViewDataSource: DataSource,
+	listAnimator: DataSource,
 	aztechtml: string,
 	refresh: boolean,
 };
@@ -71,15 +71,6 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 		} );
 	}
 
-	// findDataSourceIndexForFocusedItem() {
-	// 	for ( let i = 0; i < this.props.blocks.length; ++i ) {
-	// 		if ( this.props.blocks[ i ].focused === true ) {
-	// 			return i;
-	// 		}
-	// 	}
-	// 	return -1;
-	// }
-
 	// TODO: in the near future this will likely be changed to onShowBlockTypePicker and bound to this.props
 	// once we move the action to the toolbar
 	showBlockTypePicker( show: boolean ) {
@@ -105,17 +96,6 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 		// now set the focus
 		this.props.focusBlockAction( newBlock.clientId );
 	}
-
-	// static getDerivedStateFromProps( props: PropsType, state: StateType ) {
-	// 	if ( props.fullparse === true ) {
-	// 		return {
-	// 			...state,
-	// 			dataSource: new DataSource( props.blocks, ( item: BlockType ) => item.clientId ),
-	// 		};
-	// 	}
-	// 	// no state change necessary
-	// 	return null;
-	// }
 
 	onToolbarButtonPressed( button: number, clientId: string ) {
 		switch ( button ) {
@@ -161,7 +141,7 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 
 	componentDidUpdate() {
 		// signal the RecyclerViewList to update as well
-		this.props.recyclerViewDataSource.setDirty();
+		this.props.listAnimator.setDirty();
 	}
 
 	onChange( clientId: string, attributes: mixed ) {
@@ -176,7 +156,7 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 			list = (
 				<RecyclerViewList
 					style={ styles.list }
-					dataSource={ this.props.recyclerViewDataSource }
+					dataSource={ this.props.listAnimator }
 					renderItem={ this.renderItem.bind( this ) }
 					ListEmptyComponent={
 						<View style={ { borderColor: '#e7e7e7', borderWidth: 10, margin: 10, padding: 20 } }>

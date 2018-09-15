@@ -6,7 +6,7 @@
 import { find, findIndex, reduce } from 'lodash';
 
 import ActionTypes from '../actions/ActionTypes';
-import { newRecyclerViewDataSource } from '../';
+import { newListAnimator, setListAnimatorCallbacks } from '../';
 
 // TODO: try to get eslint-plugin-import to work
 // Disable reason: GB eslint config doesn't handle Flow type imports alongside normal imports.
@@ -44,12 +44,14 @@ const emptyBlocksList = [];
 export const reducer = (
 	state: StateType = {
 		blocks: emptyBlocksList,
-		recyclerViewDataSource: newRecyclerViewDataSource( emptyBlocksList ),
+		listAnimator: newListAnimator( emptyBlocksList ),
+		focusedIndex: undefined,
 		refresh: false,
 	},
 	action: BlockActionType
 ) => {
 	const blocks = [ ...state.blocks ];
+	setListAnimatorCallbacks( state.listAnimator, blocks );
 	switch ( action.type ) {
 		case ActionTypes.BLOCK.UPDATE_ATTRIBUTES: {
 			const block = findBlock( blocks, action.clientId );
@@ -90,27 +92,31 @@ export const reducer = (
 				attributes: nextAttributes,
 			};
 			blocks[ index ] = updatedBlock;
-			state.recyclerViewDataSource.set( index, updatedBlock );
+			state.listAnimator.set( index, updatedBlock );
 			return {
+				...state,
 				blocks: blocks,
-				recyclerViewDataSource: state.recyclerViewDataSource,
 				refresh: ! state.refresh,
 			};
 		}
 		case ActionTypes.BLOCK.FOCUS: {
-			const destBlock = findBlock( blocks, action.clientId );
-			const destBlockState = destBlock.focused;
+			const destBlockIndex = findBlockIndex( blocks, action.clientId );
 
-			// Deselect all blocks
-			for ( const block of blocks ) {
-				block.focused = false;
+			if ( state.focusedIndex && state.focusedIndex !== destBlockIndex ) {
+				const lastFocusedBlock = blocks[ state.focusedIndex ];
+				lastFocusedBlock.focused = false;
+				state.listAnimator.set( state.focusedIndex, lastFocusedBlock );
 			}
 
+			const destBlock = blocks[ destBlockIndex ];
+
 			// Select or deselect pressed block
-			destBlock.focused = ! destBlockState;
+			destBlock.focused = ! destBlock.focused;
+			state.listAnimator.set( destBlockIndex, destBlock );
 			return {
+				...state,
 				blocks: blocks,
-				recyclerViewDataSource: state.recyclerViewDataSource,
+				focusedIndex: destBlock.focused ? destBlockIndex : undefined,
 				refresh: ! state.refresh,
 			};
 		}
@@ -123,10 +129,10 @@ export const reducer = (
 			const tmp = blocks[ index ];
 			blocks[ index ] = blocks[ index - 1 ];
 			blocks[ index - 1 ] = tmp;
-			state.recyclerViewDataSource.moveUp( index );
+			state.listAnimator.moveUp( index );
 			return {
+				...state,
 				blocks: blocks,
-				recyclerViewDataSource: state.recyclerViewDataSource,
 				refresh: ! state.refresh,
 			};
 		}
@@ -139,20 +145,20 @@ export const reducer = (
 			const tmp = blocks[ index ];
 			blocks[ index ] = blocks[ index + 1 ];
 			blocks[ index + 1 ] = tmp;
-			state.recyclerViewDataSource.moveDown( index );
+			state.listAnimator.moveDown( index );
 			return {
+				...state,
 				blocks: blocks,
-				recyclerViewDataSource: state.recyclerViewDataSource,
 				refresh: ! state.refresh,
 			};
 		}
 		case ActionTypes.BLOCK.DELETE: {
 			const index = findBlockIndex( blocks, action.clientId );
 			blocks.splice( index, 1 );
-			state.recyclerViewDataSource.splice( index, 1 );
+			state.listAnimator.splice( index, 1 );
 			return {
+				...state,
 				blocks: blocks,
-				recyclerViewDataSource: state.recyclerViewDataSource,
 				refresh: ! state.refresh,
 			};
 		}
@@ -160,20 +166,20 @@ export const reducer = (
 			// TODO we need to set focused: true and search for the currently focused block and
 			// set that one to `focused: false`.
 			const index = insertBlock( blocks, action.block, action.clientIdAbove );
-			state.recyclerViewDataSource.splice( index, 0, action.block );
+			state.listAnimator.splice( index, 0, action.block );
 			return {
+				...state,
 				blocks: blocks,
-				recyclerViewDataSource: state.recyclerViewDataSource,
 				refresh: ! state.refresh,
 			};
 		}
 		case ActionTypes.BLOCK.PARSE: {
 			const parsed = parse( action.html );
 			return {
+				...state,
 				blocks: parsed,
-				recyclerViewDataSource: newRecyclerViewDataSource( parsed ),
+				listAnimator: newListAnimator( parsed ),
 				refresh: ! state.refresh,
-				fullparse: true,
 			};
 		}
 		default:

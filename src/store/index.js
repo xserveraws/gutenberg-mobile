@@ -25,12 +25,23 @@ export type BlockType = {
 
 export type StateType = {
 	blocks: Array<BlockType>,
-	recyclerViewDataSource: DataSource,
+	listAnimator: DataSource,
+	focusedIndex: ?number,
 	refresh: boolean,
 };
 
-export function newRecyclerViewDataSource( blocks: Array<BlockType> ): DataSource {
-	return new DataSource( blocks, ( item: BlockType ) => item.clientId );
+export function newListAnimator( blocks: Array<BlockType> ): DataSource {
+	return new DataSource(
+		blocks,
+		( item: BlockType ) => item.clientId,
+		( index ) => blocks[ index ],
+		() => blocks.length
+	);
+}
+
+export function setListAnimatorCallbacks( listAnimator: DataSource, blocks: Array<BlockType> ) {
+	listAnimator.setGetter( ( index ) => blocks[ index ] );
+	listAnimator.setSizer( () => blocks.length );
 }
 
 registerCoreBlocks();
@@ -86,7 +97,8 @@ export const initialState: StateType = {
 	// TODO: get blocks list block state should be externalized (shared with Gutenberg at some point?).
 	// If not it should be created from a string parsing (commented HTML to json).
 	blocks: initialBlocks,
-	recyclerViewDataSource: newRecyclerViewDataSource( initialBlocks ),
+	listAnimator: newListAnimator( initialBlocks ),
+	focusedIndex: undefined,
 	refresh: false,
 };
 
