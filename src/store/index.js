@@ -32,7 +32,6 @@ export type StateType = {
 
 export function newListAnimator( blocks: Array<BlockType> ): DataSource {
 	return new DataSource(
-		blocks,
 		( item: BlockType ) => item.clientId,
 		( index ) => blocks[ index ],
 		() => blocks.length
