@@ -11,7 +11,6 @@ import {
 	Text,
 	View,
 	FlatList,
-	TextInput,
 	KeyboardAvoidingView,
 } from 'react-native';
 import RecyclerViewList, { DataSource } from 'react-native-recyclerview-list';
@@ -20,9 +19,10 @@ import { ToolbarButton } from './constants';
 import type { BlockType } from '../store/';
 import styles from './block-manager.scss';
 import BlockPicker from './block-picker';
+import HTMLTextInput from '../components/html-text-input';
 
 // Gutenberg imports
-import { createBlock, serialize } from '@wordpress/blocks';
+import { createBlock } from '@wordpress/blocks';
 
 export type BlockListType = {
 	onChange: ( clientId: string, attributes: mixed ) => void,
@@ -48,8 +48,6 @@ type StateType = {
 };
 
 export default class BlockManager extends React.Component<PropsType, StateType> {
-	_htmlTextInput: TextInput = null;
-
 	constructor( props: PropsType ) {
 		super( props );
 		this.state = {
@@ -118,25 +116,6 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 				// TODO: implement settings
 				break;
 		}
-	}
-
-	serializeToHtml() {
-		return this.props.blocks
-			.map( ( block ) => {
-				if ( block.name === 'aztec' ) {
-					return '<aztec>' + block.attributes.content + '</aztec>\n\n';
-				}
-
-				return serialize( [ block ] ) + '\n\n';
-			} )
-			.reduce( ( prevVal, value ) => {
-				return prevVal + value;
-			}, '' );
-	}
-
-	parseHTML( html: string ) {
-		const { parseBlocksAction } = this.props;
-		parseBlocksAction( html );
 	}
 
 	componentDidUpdate() {
@@ -224,11 +203,6 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 	}
 
 	handleSwitchEditor = ( showHtml: boolean ) => {
-		if ( ! showHtml ) {
-			const html = this._htmlTextInput._lastNativeText;
-			this.parseHTML( html );
-		}
-
 		this.setState( { showHtml } );
 	};
 
@@ -263,19 +237,8 @@ export default class BlockManager extends React.Component<PropsType, StateType> 
 	}
 
 	renderHTML() {
-		const behavior = Platform.OS === 'ios' ? 'padding' : null;
-		const htmlInputRef = ( el ) => ( this._htmlTextInput = el );
 		return (
-			<KeyboardAvoidingView style={ { flex: 1 } } behavior={ behavior }>
-				<TextInput
-					textAlignVertical="top"
-					multiline
-					ref={ htmlInputRef }
-					numberOfLines={ 0 }
-					style={ styles.htmlView }
-					value={ this.serializeToHtml() }
-				/>
-			</KeyboardAvoidingView>
+			<HTMLTextInput { ...this.props } />
 		);
 	}
 }
