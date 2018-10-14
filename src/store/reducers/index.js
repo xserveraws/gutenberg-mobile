@@ -5,13 +5,15 @@
 
 import { find, findIndex, reduce } from 'lodash';
 
+import { DataSource } from 'react-native-recyclerview-list';
+
 import ActionTypes from '../actions/ActionTypes';
 import { newListAnimator } from '../';
 
 // TODO: try to get eslint-plugin-import to work
 // Disable reason: GB eslint config doesn't handle Flow type imports alongside normal imports.
 /* eslint-disable no-duplicate-imports */
-import type { StateType } from '../';
+import type { BlockType, StateType } from '../';
 
 import type { BlockActionType } from '../actions';
 import { parse } from '@wordpress/blocks';
