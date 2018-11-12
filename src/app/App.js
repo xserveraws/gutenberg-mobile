@@ -4,44 +4,42 @@
 import '../globals';
 
 import React from 'react';
-import { Provider } from 'react-redux';
-import { type BlockType, setupStore, html2State } from '../store';
-import AppContainer from './AppContainer';
-import { Store } from 'redux';
+
+// Gutenberg imports
 import { withDispatch } from '@wordpress/data';
+import { parse, serialize } from '@wordpress/blocks';
+import { registerCoreBlocks } from '@wordpress/block-library';
+import { registerBlockType, setUnregisteredTypeHandlerName } from '@wordpress/blocks';
+
+import type BlockType from '../store/types';
+import AppContainer from './AppContainer';
 
 import initialHtml from './initial-html';
 
+import * as UnsupportedBlock from '../block-types/unsupported-block/';
+
+registerCoreBlocks();
+registerBlockType( UnsupportedBlock.name, UnsupportedBlock.settings );
+setUnregisteredTypeHandlerName( UnsupportedBlock.name );
+
 type PropsType = {
 	onResetBlocks: Array<BlockType> => mixed,
-	initialData: string | Store,
-};
-type StateType = {
-	store: Store,
 };
 
-class AppProvider extends React.Component<PropsType, StateType> {
-	state: StateType;
-
+class AppProvider extends React.Component<PropsType> {
 	constructor( props: PropsType ) {
 		super( props );
 
-		this.state = {
-			store:
-				typeof props.initialData === 'object' ?
-					props.initialData :
-					setupStore( html2State( props.initialData || initialHtml ) ),
-		};
+		const blocksFromHtml = parse( initialHtml );
 
 		// initialize gutenberg store with local store
-		props.onResetBlocks( this.state.store.getState().blocks );
+		// TODO: use `setupEditorState` instead
+		props.onResetBlocks( blocksFromHtml );
 	}
 
 	render() {
 		return (
-			<Provider store={ this.state.store }>
-				<AppContainer />
-			</Provider>
+			<AppContainer />
 		);
 	}
 }
