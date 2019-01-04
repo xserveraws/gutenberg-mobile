@@ -325,7 +325,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	}
 
 	renderItem( value: { item: BlockType, index: number } ) {
-		const titleForAddPlaceIndicator = __( 'ADD BLOCK HERE' );
+		const titleForAddPlaceIndicator = __( 'ADD BLOCK HERE - TEST' );
 		const addBlockHere = (
 			<View style={ styles.containerStyleAddHere } >
 				<View style={ styles.lineStyleAddHere }></View>
