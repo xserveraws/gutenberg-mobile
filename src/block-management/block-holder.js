@@ -1,7 +1,7 @@
 /**
-* @format
-* @flow
-*/
+ * @format
+ * @flow
+ */
 
 import React from 'react';
 import {
@@ -46,6 +46,8 @@ type PropsType = BlockType & {
 	moveBlockUp: () => void,
 	moveBlockDown: () => void,
 	removeBlock: () => void,
+	onMove: () => void,
+	onMoveEnd: () => void,
 };
 
 type StateType = {
@@ -181,10 +183,23 @@ export class BlockHolder extends React.Component<PropsType, StateType> {
 		const { isSelected } = this.props;
 
 		return (
-			<TouchableWithoutFeedback onPress={ this.onFocus } onLayout={ this.onBlockHolderLayout } >
-				<View style={ [ styles.blockHolder, isSelected && this.blockHolderFocusedStyle() ] }>
+			<TouchableWithoutFeedback
+				onPress={ this.onFocus }
+				onLayout={ this.onBlockHolderLayout }
+				onLongPress={ this.props.onMove }
+				onPressOut={ this.props.onMoveEnd }
+			>
+				<View style={ [ styles.blockHolder, isSelected && this.blockHolderFocusedStyle() ], { backgroundColor: 'green', padding: 20 } }
+				>
 					{ this.props.showTitle && this.renderBlockTitle() }
-					<View style={ [ ! isSelected && styles.blockContainer, isSelected && styles.blockContainerFocused ] }>{ this.getBlockForType() }</View>
+					<View
+						style={ [
+							! isSelected && styles.blockContainer,
+							isSelected && styles.blockContainerFocused,
+						] }
+					>
+						{ this.getBlockForType() }
+					</View>
 					{ this.renderToolbar() }
 				</View>
 			</TouchableWithoutFeedback>

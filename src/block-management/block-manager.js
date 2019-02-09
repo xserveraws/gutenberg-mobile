@@ -23,6 +23,7 @@ import BlockToolbar from './block-toolbar';
 import KeyboardAvoidingView from '../components/keyboard-avoiding-view';
 import { KeyboardAwareFlatList, handleCaretVerticalPositionChange } from '../components/keyboard-aware-flat-list';
 import SafeArea from 'react-native-safe-area';
+import DraggableFlatList from 'react-native-draggable-flatlist';
 
 // Gutenberg imports
 import { withDispatch, withSelect } from '@wordpress/data';
@@ -71,6 +72,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		( this: any ).keyboardDidHide = this.keyboardDidHide.bind( this );
 		( this: any ).onCaretVerticalPositionChange = this.onCaretVerticalPositionChange.bind( this );
 		( this: any ).scrollViewInnerRef = this.scrollViewInnerRef.bind( this );
+		( this: any ).onMoveEnd = this.onMoveEnd.bind( this );
 
 		this.state = {
 			blockTypePickerVisible: false,
@@ -171,22 +173,22 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		);
 	}
 
+	onMoveEnd( { data }: Mixed ) {
+		console.log( data );
+	}
+
 	renderList() {
 		return (
-			<View style={ { flex: 1 } } >
-				<KeyboardAwareFlatList
-					innerRef={ this.scrollViewInnerRef }
+			<View style={ { flex: 1 } }>
+				<DraggableFlatList
+					data={ this.props.blockClientIds }
+					renderItem={ this.renderItem }
+					keyExtractor={ identity }
+					onMoveEnd={ this.onMoveEnd }
+					title={ this.props.title }
+					style={ styles.list }
 					blockToolbarHeight={ toolbarStyles.container.height }
 					innerToolbarHeight={ inlineToolbarStyles.toolbar.height }
-					safeAreaBottomInset={ this.state.safeAreaBottomInset }
-					parentHeight={ this.state.rootViewHeight }
-					keyboardShouldPersistTaps="always"
-					style={ styles.list }
-					data={ this.props.blockClientIds }
-					keyExtractor={ identity }
-					renderItem={ this.renderItem }
-					shouldPreventAutomaticScroll={ this.shouldFlatListPreventAutomaticScroll }
-					title={ this.props.title }
 					ListHeaderComponent={ this.renderHeader }
 					ListEmptyComponent={ this.renderDefaultBlockAppender }
 				/>
@@ -234,7 +236,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		return isUnmodifiedDefaultBlock( block );
 	}
 
-	renderItem( value: { item: string, index: number } ) {
+	renderItem( value: { item: string, index: number, move: any, moveEnd: any, isActive: boolean } ) {
 		const clientId = value.item;
 
 		return (
@@ -245,6 +247,8 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 					clientId={ clientId }
 					rootClientId={ this.props.rootClientId }
 					onCaretVerticalPositionChange={ this.onCaretVerticalPositionChange }
+					onMove={ value.move }
+					onMoveEnd={ value.moveEnd }
 				/>
 				{ this.state.blockTypePickerVisible && this.props.isBlockSelected( clientId ) && (
 					<View style={ styles.containerStyleAddHere } >
