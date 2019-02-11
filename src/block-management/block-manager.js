@@ -23,6 +23,7 @@ import BlockToolbar from './block-toolbar';
 import KeyboardAvoidingView from '../components/keyboard-avoiding-view';
 import { KeyboardAwareFlatList, handleCaretVerticalPositionChange } from '../components/keyboard-aware-flat-list';
 import SafeArea from 'react-native-safe-area';
+import PostTitleInputView from '../components/post-title-input';
 
 // Gutenberg imports
 import { withDispatch, withSelect } from '@wordpress/data';
@@ -56,6 +57,7 @@ type StateType = {
 
 export class BlockManager extends React.Component<PropsType, StateType> {
 	scrollViewRef: Object;
+	titleViewRef: Object;
 
 	constructor( props: PropsType ) {
 		super( props );
@@ -71,6 +73,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		( this: any ).keyboardDidHide = this.keyboardDidHide.bind( this );
 		( this: any ).onCaretVerticalPositionChange = this.onCaretVerticalPositionChange.bind( this );
 		( this: any ).scrollViewInnerRef = this.scrollViewInnerRef.bind( this );
+		( this: any ).titleRef = this.titleRef.bind( this );
 
 		this.state = {
 			blockTypePickerVisible: false,
@@ -117,6 +120,9 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 
 	onRootViewLayout( event: LayoutChangeEvent ) {
 		const { height } = event.nativeEvent.layout;
+		// Check if new post and set the focus on the title field
+		console.log('onRootViewLayout');
+		this.titleViewRef.focus();
 		this.setState( { rootViewHeight: height }, () => {
 			sendNativeEditorDidLayout();
 		} );
@@ -150,6 +156,10 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		this.scrollViewRef = ref;
 	}
 
+	titleRef( ref: Object ) {
+		this.titleViewRef = ref;
+	}
+
 	shouldFlatListPreventAutomaticScroll() {
 		return this.state.blockTypePickerVisible;
 	}
@@ -162,12 +172,11 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 
 	renderHeader() {
 		return (
-			<View style={ styles.titleContainer }>
-				<PostTitle
-					title={ this.props.title }
-					onUpdate={ this.props.setTitleAction }
-					placeholder={ 'Add a Title' } />
-			</View>
+			<PostTitleInputView ref={ this.titleRef } style={ styles.titleContainer }>
+					//title={ this.props.title }
+					//onUpdate={ this.props.setTitleAction }
+					placeholder={ 'Add a Title' }
+			</PostTitleInputView>
 		);
 	}
 
