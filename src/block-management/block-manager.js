@@ -12,6 +12,7 @@ import React from 'react';
 import { identity } from 'lodash';
 
 import { Text, View, Keyboard, LayoutChangeEvent, SafeAreaView } from 'react-native';
+import BlockInflater from './block-inflater';
 import BlockHolder from './block-holder';
 import type { BlockType } from '../store/types';
 import styles from './block-manager.scss';
@@ -239,20 +240,17 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	renderItem( value: { item: string, index: number } ) {
 		const clientId = value.item;
 
-		console.log( `Rendering ${ clientId }` );
-
 		return (
 			<View>
-				<View style={ { minHeight: 300 } }>
-					<Text>{ clientId }</Text>
-				</View>
-				{ /* <BlockHolder
-					key={ clientId }
-					showTitle={ false }
-					clientId={ clientId }
-					rootClientId={ this.props.rootClientId }
-					onCaretVerticalPositionChange={ this.onCaretVerticalPositionChange }
-				/> */ }
+				<BlockInflater clientId={ clientId } >
+					<BlockHolder
+						key={ clientId }
+						showTitle={ false }
+						clientId={ clientId }
+						rootClientId={ this.props.rootClientId }
+						onCaretVerticalPositionChange={ this.onCaretVerticalPositionChange }
+					/>
+				</BlockInflater>
 				{ this.state.blockTypePickerVisible && this.props.isBlockSelected( clientId ) && (
 					<View style={ styles.containerStyleAddHere } >
 						<View style={ styles.lineStyleAddHere }></View>
