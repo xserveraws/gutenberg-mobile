@@ -45,7 +45,7 @@ class AppContainer extends React.Component<PropsType> {
 		};
 
 		props.setupEditor( post );
-		this.lastHtml = serialize( parse( props.initialHtml ) );
+		this.lastHtml = props.initialHtml; //serialize( parse( props.initialHtml ) );
 		this.lastTitle = props.initialTitle;
 
 		if ( props.initialHtmlModeEnabled && ! props.showHtml ) {
@@ -109,8 +109,8 @@ export default compose( [
 		return {
 			getBlocks,
 			showHtml: getBlockMode( rootClientId ) === 'html',
-			editedPostContent: getEditedPostContent(),
-			title: getEditedPostAttribute( 'title' ),
+			// editedPostContent: getEditedPostContent(),
+			// title: getEditedPostAttribute( 'title' ),
 		};
 	} ),
 	withDispatch( ( dispatch ) => {

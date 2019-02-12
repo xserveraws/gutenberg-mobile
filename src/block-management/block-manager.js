@@ -183,6 +183,8 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 					keyboardShouldPersistTaps="always"
 					style={ styles.list }
 					data={ this.props.blockClientIds }
+					windowSize={ 2 }
+					initialNumToRender={ 3 }
 					keyExtractor={ identity }
 					renderItem={ this.renderItem }
 					shouldPreventAutomaticScroll={ this.shouldFlatListPreventAutomaticScroll }
@@ -237,15 +239,20 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	renderItem( value: { item: string, index: number } ) {
 		const clientId = value.item;
 
+		console.log( `Rendering ${ clientId }` );
+
 		return (
 			<View>
-				<BlockHolder
+				<View style={ { minHeight: 300 } }>
+					<Text>{ clientId }</Text>
+				</View>
+				{ /* <BlockHolder
 					key={ clientId }
 					showTitle={ false }
 					clientId={ clientId }
 					rootClientId={ this.props.rootClientId }
 					onCaretVerticalPositionChange={ this.onCaretVerticalPositionChange }
-				/>
+				/> */ }
 				{ this.state.blockTypePickerVisible && this.props.isBlockSelected( clientId ) && (
 					<View style={ styles.containerStyleAddHere } >
 						<View style={ styles.lineStyleAddHere }></View>
