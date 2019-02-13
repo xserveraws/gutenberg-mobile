@@ -25,17 +25,12 @@ type StateType = {
 };
 
 export class BlockInflater extends React.Component<PropsType, StateType> {
-	constructor( props: PropsType ) {
-		super( props );
-
-		this.state = {
-			hasRequestedInflation: false,
-		};
-	}
+	hasRequestedInflation = false;
 
 	componentDidMount() {
-		if ( ! this.props.hasAttributes && ! this.state.hasRequestedInflation ) {
+		if ( ! this.props.hasAttributes && ! this.hasRequestedInflation ) {
 			this.props.inflateBlock( this.props.blockNode );
+			this.hasRequestedInflation = true;
 		}
 	}
 
