@@ -34,7 +34,6 @@ export class BlockInflater extends React.Component<PropsType, StateType> {
 	}
 
 	componentDidMount() {
-		debugger;
 		if ( ! this.props.hasAttributes && ! this.state.hasRequestedInflation ) {
 			this.props.inflateBlock( this.props.blockNode );
 		}
