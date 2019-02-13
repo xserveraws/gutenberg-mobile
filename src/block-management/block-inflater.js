@@ -40,11 +40,11 @@ export class BlockInflater extends React.Component<PropsType, StateType> {
 		return (
 			<Fragment>
 				{ hasAttributes && this.props.children }
-				{ ! hasAttributes &&
+				{ ! hasAttributes && (
 					<View style={ styles.blockInflater }>
 						<Text>{ `Need to inflate ${ clientId }` }</Text>
 					</View>
-				}
+				) }
 			</Fragment>
 		);
 	}
