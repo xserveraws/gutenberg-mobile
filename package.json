@@ -22,6 +22,7 @@
     "babel-plugin-react-native-classname-to-style": "^1.2.1",
     "babel-plugin-react-native-platform-specific-extensions": "^1.1.1",
     "cross-env": "^5.1.4",
+    "detox": "^10.0.7",
     "empty": "^0.10.1",
     "equivalent-key-map": "^0.2.0",
     "eslint": "^4.19.1",
@@ -119,5 +120,16 @@
     "tannin": "^1.0.1",
     "tinycolor2": "^1.4.1",
     "turbo-combine-reducers": "^1.0.2"
+  },
+  "detox": {
+    "configurations": {
+      "ios.sim.debug": {
+        "binaryPath": "ios/build/Build/Products/Debug-iphonesimulator/gutenberg.app",
+        "build": "xcodebuild -project ios/gutenberg.xcodeproj -scheme gutenberg -configuration Debug -sdk iphonesimulator -derivedDataPath ios/build",
+        "type": "ios.simulator",
+        "name": "iPhone 7"
+      }
+    },
+    "test-runner": "jest"
   }
 }
