@@ -240,6 +240,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		return (
 			<View>
 				<BlockHolder
+					testId={ 'welcome' }
 					key={ clientId }
 					showTitle={ false }
 					clientId={ clientId }
