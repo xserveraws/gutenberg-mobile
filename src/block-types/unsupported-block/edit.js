@@ -14,7 +14,7 @@ type PropsType = BlockType & {
 };
 
 // Styles
-import styles from '../../block-management/block-holder.scss';
+import styles from './style.scss';
 
 export default class UnsupportedBlockEdit extends React.Component<PropsType> {
 	render() {

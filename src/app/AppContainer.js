@@ -10,7 +10,7 @@ import RNReactNativeGutenbergBridge from 'react-native-gutenberg-bridge';
 
 import MainApp from './MainApp';
 import type { BlockType } from '../store/types';
-import { name as unsupportedBlockName } from '../block-types/unsupported-block';
+export const unsupportedBlockName = 'gmobile/unsupported';
 
 type PropsType = {
 	rootClientId: ?string,

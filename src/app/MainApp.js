@@ -9,10 +9,13 @@ import {
 	subscribeUpdateHtml,
 } from 'react-native-gutenberg-bridge';
 
-import BlockManager from '../block-management/block-manager';
+import { BlockList } from '@wordpress/editor';
 import { SlotFillProvider } from '@wordpress/components';
+import { PostTitle } from '@wordpress/editor';
+import { __ } from '@wordpress/i18n';
 
 import type { EmitterSubscription } from 'react-native';
+import styles from './block-manager.scss';
 
 type PropsType = {
 	rootClientId: ?string,
@@ -30,6 +33,14 @@ export default class MainScreen extends React.Component<PropsType, StateType> {
 	subscriptionParentToggleHTMLMode: ?EmitterSubscription;
 	subscriptionParentSetTitle: ?EmitterSubscription;
 	subscriptionParentUpdateHtml: ?EmitterSubscription;
+
+	constructor( props: PropsType ) {
+		super( props );
+
+		this.state = {
+			isFullyBordered: true,
+		};
+	}
 
 	componentDidMount() {
 		this.subscriptionParentGetHtml = subscribeParentGetHtml( () => {
@@ -64,10 +75,29 @@ export default class MainScreen extends React.Component<PropsType, StateType> {
 		}
 	}
 
+	blockHolderBorderStyle() {
+		return this.state.isFullyBordered ? styles.blockHolderFullBordered : styles.blockHolderSemiBordered;
+	}
+
+	renderHeader() {
+		return (
+			<PostTitle
+				innerRef={ ( ref ) => {
+					this.postTitleRef = ref;
+				} }
+				title={ this.props.title }
+				onUpdate={ this.props.setTitleAction }
+				placeholder={ __( 'Add title' ) }
+				borderStyle={ this.blockHolderBorderStyle() }
+				focusedBorderColor={ styles.blockHolderFocused.borderColor } />
+		);
+	}
+
 	render() {
 		return (
 			<SlotFillProvider>
-				<BlockManager { ...this.props } />
+				{ this.renderHeader() }
+				<BlockList { ...this.props } />
 			</SlotFillProvider>
 		);
 	}
