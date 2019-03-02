@@ -107,9 +107,9 @@ class AztecView extends React.Component {
 
   _onSelectionChange = (event) => {
     if ( this.props.onSelectionChange ) {
-      const { selectionStart, selectionEnd, text } = event.nativeEvent;
+      const { selectionStart, selectionEnd } = event.nativeEvent;
       const { onSelectionChange } = this.props;
-      onSelectionChange( selectionStart, selectionEnd, text, event );
+      onSelectionChange( selectionStart, selectionEnd, event );
     }
 
     if ( this.props.onCaretVerticalPositionChange && 

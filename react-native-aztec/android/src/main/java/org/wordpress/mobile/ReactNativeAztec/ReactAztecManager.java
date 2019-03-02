@@ -1,37 +1,53 @@
 package org.wordpress.mobile.ReactNativeAztec;
 
-
 import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.Typeface;
-import android.support.annotation.Nullable;
+import android.graphics.drawable.Drawable;
+import android.support.v4.content.ContextCompat;
 import android.text.Editable;
+import android.text.InputFilter;
+import android.text.InputType;
+import android.text.Spannable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.KeyEvent;
 import android.view.View;
-
+import android.view.inputmethod.EditorInfo;
+import android.widget.TextView;
 import com.facebook.infer.annotation.Assertions;
+import com.facebook.react.bridge.JSApplicationIllegalArgumentException;
 import com.facebook.react.bridge.ReactContext;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
+import com.facebook.react.bridge.UIManager;
 import com.facebook.react.common.MapBuilder;
+import com.facebook.react.module.annotations.ReactModule;
+import com.facebook.react.uimanager.BaseViewManager;
+import com.facebook.react.uimanager.LayoutShadowNode;
 import com.facebook.react.uimanager.PixelUtil;
-import com.facebook.react.uimanager.SimpleViewManager;
+import com.facebook.react.uimanager.Spacing;
 import com.facebook.react.uimanager.ThemedReactContext;
 import com.facebook.react.uimanager.UIManagerModule;
 import com.facebook.react.uimanager.ViewDefaults;
 import com.facebook.react.uimanager.ViewProps;
 import com.facebook.react.uimanager.annotations.ReactProp;
+import com.facebook.react.uimanager.annotations.ReactPropGroup;
 import com.facebook.react.uimanager.events.EventDispatcher;
+import com.facebook.react.views.imagehelper.ResourceDrawableIdHelper;
 import com.facebook.react.views.scroll.ScrollEvent;
 import com.facebook.react.views.scroll.ScrollEventType;
 import com.facebook.react.views.text.DefaultStyleValuesUtil;
 import com.facebook.react.views.text.ReactFontManager;
-import com.facebook.react.views.textinput.ReactContentSizeChangedEvent;
+import com.facebook.react.views.text.ReactTextUpdate;
+import com.facebook.react.views.text.TextInlineImageSpan;
+import com.facebook.react.views.textinput.ContentSizeWatcher;
 import com.facebook.react.views.textinput.ReactTextChangedEvent;
 import com.facebook.react.views.textinput.ReactTextInputEvent;
-import com.facebook.react.views.textinput.ReactTextInputManager;
+import com.facebook.react.views.textinput.ReactTextInputShadowNode;
 import com.facebook.react.views.textinput.ScrollWatcher;
+import com.facebook.yoga.YogaConstants;
 
 import org.wordpress.aztec.glideloader.GlideImageLoader;
 import org.wordpress.aztec.glideloader.GlideVideoThumbnailLoader;
@@ -43,39 +59,48 @@ import org.wordpress.aztec.plugins.wpcomments.HiddenGutenbergPlugin;
 import org.wordpress.aztec.plugins.wpcomments.WordPressCommentsPlugin;
 import org.wordpress.aztec.plugins.wpcomments.toolbar.MoreToolbarButton;
 
-import java.util.Map;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.Map;
+import javax.annotation.Nullable;
 
-public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
+/**
+ * Manages instances of TextInput.
+ */
+@ReactModule(name = ReactAztecManager.REACT_CLASS)
+public class ReactAztecManager extends BaseViewManager<ReactAztecText, LayoutShadowNode> {
 
-    public static final String REACT_CLASS = "RCTAztecView";
+    protected static final String REACT_CLASS = "RCTAztecView";
+
+    private static final int[] SPACING_TYPES = {
+            Spacing.ALL, Spacing.LEFT, Spacing.RIGHT, Spacing.TOP, Spacing.BOTTOM,
+    };
 
     private static final int FOCUS_TEXT_INPUT = 1;
     private static final int BLUR_TEXT_INPUT = 2;
+
+    private static final int INPUT_TYPE_KEYBOARD_NUMBER_PAD = InputType.TYPE_CLASS_NUMBER;
+    private static final int INPUT_TYPE_KEYBOARD_DECIMAL_PAD = INPUT_TYPE_KEYBOARD_NUMBER_PAD |
+            InputType.TYPE_NUMBER_FLAG_DECIMAL;
+    private static final int INPUT_TYPE_KEYBOARD_NUMBERED = INPUT_TYPE_KEYBOARD_DECIMAL_PAD |
+            InputType.TYPE_NUMBER_FLAG_SIGNED;
+    private static final int PASSWORD_VISIBILITY_FLAG = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD &
+            ~InputType.TYPE_TEXT_VARIATION_PASSWORD;
+    private static final int KEYBOARD_TYPE_FLAGS = INPUT_TYPE_KEYBOARD_NUMBERED |
+            InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS |
+            InputType.TYPE_CLASS_TEXT | InputType.TYPE_CLASS_PHONE |
+            PASSWORD_VISIBILITY_FLAG;
+
+    private static final String KEYBOARD_TYPE_EMAIL_ADDRESS = "email-address";
+    private static final String KEYBOARD_TYPE_NUMERIC = "numeric";
+    private static final String KEYBOARD_TYPE_DECIMAL_PAD = "decimal-pad";
+    private static final String KEYBOARD_TYPE_NUMBER_PAD = "number-pad";
+    private static final String KEYBOARD_TYPE_PHONE_PAD = "phone-pad";
+    private static final String KEYBOARD_TYPE_VISIBLE_PASSWORD = "visible-password";
+    private static final InputFilter[] EMPTY_FILTERS = new InputFilter[0];
     private static final int UNSET = -1;
-
-    // we define the same codes in ReactAztecText as they have for ReactNative's TextInput, so
-    // it's easier to handle focus between Aztec and TextInput instances on the same screen.
-    // see https://github.com/wordpress-mobile/react-native-aztec/pull/79
-    private int mFocusTextInputCommandCode = FOCUS_TEXT_INPUT; // pre-init
-    private int mBlurTextInputCommandCode = BLUR_TEXT_INPUT; // pre-init
-
-    private static final String TAG = "ReactAztecText";
-
-    public ReactAztecManager() {
-        initializeFocusAndBlurCommandCodes();
-    }
-
-    private void initializeFocusAndBlurCommandCodes() {
-        // For this, we'd like to keep track of potential command code changes in the future,
-        // so we obtain an instance of ReactTextInputManager and call getCommandsMap in our
-        // constructor to use the very same codes as TextInput does.
-        ReactTextInputManager reactTextInputManager = new ReactTextInputManager();
-        Map<String, Integer> map = reactTextInputManager.getCommandsMap();
-        mFocusTextInputCommandCode = map.get("focusTextInput");
-        mBlurTextInputCommandCode = map.get("blurTextInput");
-    }
 
     @Override
     public String getName() {
@@ -83,29 +108,37 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
     }
 
     @Override
-    protected ReactAztecText createViewInstance(ThemedReactContext reactContext) {
-        ReactAztecText aztecText = new ReactAztecText(reactContext);
-        aztecText.setFocusableInTouchMode(true);
-        aztecText.setFocusable(true);
-        aztecText.setCalypsoMode(false);
-        return aztecText;
+    public ReactAztecText createViewInstance(ThemedReactContext context) {
+        ReactAztecText editText = new ReactAztecText(context);
+        int inputType = editText.getInputType();
+        editText.setInputType(inputType & (~InputType.TYPE_TEXT_FLAG_MULTI_LINE));
+        editText.setReturnKeyType("done");
+        editText.setTextSize(
+                TypedValue.COMPLEX_UNIT_PX,
+                (int) Math.ceil(PixelUtil.toPixelFromSP(ViewDefaults.FONT_SIZE_SP)));
+        return editText;
+    }
+
+    @Override
+    public LayoutShadowNode createShadowNodeInstance() {
+        return new ReactTextInputShadowNode();
+    }
+
+    @Override
+    public Class<? extends LayoutShadowNode> getShadowNodeClass() {
+        return ReactTextInputShadowNode.class;
     }
 
     @Nullable
     @Override
     public Map<String, Object> getExportedCustomBubblingEventTypeConstants() {
         return MapBuilder.<String, Object>builder()
-             /*   .put(
+                .put(
                         "topSubmitEditing",
                         MapBuilder.of(
                                 "phasedRegistrationNames",
                                 MapBuilder.of(
-                                        "bubbled", "onSubmitEditing", "captured", "onSubmitEditingCapture")))*/
-                .put(
-                        "topChange",
-                        MapBuilder.of(
-                                "phasedRegistrationNames",
-                                MapBuilder.of("bubbled", "onChange")))
+                                        "bubbled", "onSubmitEditing", "captured", "onSubmitEditingCapture")))
                 .put(
                         "topFormatsChanges",
                         MapBuilder.of(
@@ -146,44 +179,60 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
                         MapBuilder.of(
                                 "phasedRegistrationNames",
                                 MapBuilder.of("bubbled", "onBlur", "captured", "onBlurCapture")))
-              /*  .put(
+                .put(
                         "topKeyPress",
                         MapBuilder.of(
                                 "phasedRegistrationNames",
-                                MapBuilder.of("bubbled", "onKeyPress", "captured", "onKeyPressCapture")))*/
+                                MapBuilder.of("bubbled", "onKeyPress", "captured", "onKeyPressCapture")))
                 .build();
     }
 
     @Nullable
     @Override
-    public Map getExportedCustomDirectEventTypeConstants() {
-        return MapBuilder.of(
-                "topSelectionChange",
-                MapBuilder.of("registrationName", "onSelectionChange")
-                );
+    public Map<String, Object> getExportedCustomDirectEventTypeConstants() {
+        return MapBuilder.<String, Object>builder()
+                .put(ScrollEventType.getJSEventName(ScrollEventType.SCROLL), MapBuilder.of("registrationName", "onScroll"))
+                .put("topSelectionChange", MapBuilder.of("registrationName", "onSelectionChange"))
+                .build();
     }
 
-    @ReactProp(name = "text")
-    public void setText(ReactAztecText view, ReadableMap inputMap) {
-        if (!inputMap.hasKey("eventCount")) {
-            setTextfromJS(view, inputMap.getString("text"));
-        } else {
-            // Don't think there is necessity of this branch, but justin case we want to
-            // force a 2nd setText from JS side to Native, just set a high eventCount
-            int eventCount = inputMap.getInt("eventCount");
+    @Override
+    public @Nullable Map<String, Integer> getCommandsMap() {
+        return MapBuilder.of("focusTextInput", FOCUS_TEXT_INPUT, "blurTextInput", BLUR_TEXT_INPUT);
+    }
 
-            if (view.mNativeEventCount < eventCount) {
-                setTextfromJS(view, inputMap.getString("text"));
-            }
+    @Override
+    public void receiveCommand(
+            ReactAztecText reactEditText,
+            int commandId,
+            @Nullable ReadableArray args) {
+        switch (commandId) {
+            case FOCUS_TEXT_INPUT:
+                reactEditText.requestFocusFromJS();
+                break;
+            case BLUR_TEXT_INPUT:
+                reactEditText.clearFocusFromJS();
+                break;
         }
     }
 
-    private void setTextfromJS(ReactAztecText view, String text) {
-        view.setIsSettingTextFromJS(true);
-        view.disableOnSelectionListener();
-        view.fromHtml(text, true);
-        view.enableOnSelectionListener();
-        view.setIsSettingTextFromJS(false);
+    @Override
+    public void updateExtraData(ReactAztecText view, Object extraData) {
+        if (extraData instanceof ReactTextUpdate) {
+            ReactTextUpdate update = (ReactTextUpdate) extraData;
+
+            view.setPadding(
+                    (int) update.getPaddingLeft(),
+                    (int) update.getPaddingTop(),
+                    (int) update.getPaddingRight(),
+                    (int) update.getPaddingBottom());
+
+            if (update.containsImages()) {
+                Spannable spannable = update.getText();
+                TextInlineImageSpan.possiblyUpdateInlineImageSpans(spannable, view);
+            }
+            view.maybeSetText(update);
+        }
     }
 
     @ReactProp(name = "activeFormats", defaultBoolean = false)
@@ -199,9 +248,6 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
         }
     }
 
-    /*
-     The code below was taken from the class ReactTextInputManager
-     */
     @ReactProp(name = ViewProps.FONT_SIZE, defaultFloat = ViewDefaults.FONT_SIZE_SP)
     public void setFontSize(ReactAztecText view, float fontSize) {
         view.setTextSize(
@@ -268,29 +314,75 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
         }
     }
 
-    /**
-     * This code was taken from the method parseNumericFontWeight of the class ReactTextShadowNode
-     * TODO: Factor into a common place they can both use
-     *
-     * Return -1 if the input string is not a valid numeric fontWeight (100, 200, ..., 900), otherwise
-     * return the weight.
-     */
-    private static int parseNumericFontWeight(String fontWeightString) {
-        // This should be much faster than using regex to verify input and Integer.parseInt
-        return fontWeightString.length() == 3 && fontWeightString.endsWith("00")
-                && fontWeightString.charAt(0) <= '9' && fontWeightString.charAt(0) >= '1' ?
-                100 * (fontWeightString.charAt(0) - '0') : -1;
+    @ReactProp(name = "selection")
+    public void setSelection(ReactAztecText view, @Nullable ReadableMap selection) {
+        if (selection == null) {
+            return;
+        }
+
+        if (selection.hasKey("start") && selection.hasKey("end")) {
+            view.setSelection(selection.getInt("start"), selection.getInt("end"));
+        }
     }
 
-    /* End of the code taken from ReactTextInputManager */
-
-    @ReactProp(name = "color", customType = "Color")
-    public void setColor(ReactAztecText view, @Nullable Integer color) {
-        int newColor = Color.BLACK;
-        if (color != null) {
-            newColor = color;
+    @ReactProp(name = "onSelectionChange", defaultBoolean = false)
+    public void setOnSelectionChange(final ReactAztecText view, boolean onSelectionChange) {
+        if (onSelectionChange) {
+            view.setSelectionWatcher(new ReactSelectionWatcher(view));
+        } else {
+            view.setSelectionWatcher(null);
         }
-        view.setTextColor(newColor);
+    }
+
+    @ReactProp(name = "blurOnSubmit")
+    public void setBlurOnSubmit(ReactAztecText view, @Nullable Boolean blurOnSubmit) {
+        view.setBlurOnSubmit(blurOnSubmit);
+    }
+
+    @ReactProp(name = "onContentSizeChange", defaultBoolean = false)
+    public void setOnContentSizeChange(final ReactAztecText view, boolean onContentSizeChange) {
+        if (onContentSizeChange) {
+            view.setContentSizeWatcher(new ReactContentSizeWatcher(view));
+        } else {
+            view.setContentSizeWatcher(null);
+        }
+    }
+
+    @ReactProp(name = "onScroll", defaultBoolean = false)
+    public void setOnScroll(final ReactAztecText view, boolean onScroll) {
+        if (onScroll) {
+            view.setScrollWatcher(new ReactScrollWatcher(view));
+        } else {
+            view.setScrollWatcher(null);
+        }
+    }
+
+    @ReactProp(name = "onKeyPress", defaultBoolean = false)
+    public void setOnKeyPress(final ReactAztecText view, boolean onKeyPress) {
+        view.setOnKeyPress(onKeyPress);
+    }
+
+    // Sets the letter spacing as an absolute point size.
+    // This extra handling, on top of what ReactBaseTextShadowNode already does, is required for the
+    // correct display of spacing in placeholder (hint) text.
+    @ReactProp(name = ViewProps.LETTER_SPACING, defaultFloat = 0)
+    public void setLetterSpacing(ReactAztecText view, float letterSpacing) {
+        view.setLetterSpacingPt(letterSpacing);
+    }
+
+    @ReactProp(name = "onEnter", defaultBoolean = false)
+    public void setOnEnterHandling(final ReactAztecText view, boolean onEnterHandling) {
+        view.shouldHandleOnEnter = onEnterHandling;
+    }
+
+    @ReactProp(name = "onBackspace", defaultBoolean = false)
+    public void setOnBackspaceHandling(final ReactAztecText view, boolean onBackspaceHandling) {
+        view.shouldHandleOnBackspace = onBackspaceHandling;
+    }
+
+    @ReactProp(name = "onPaste", defaultBoolean = false)
+    public void setOnPasteHandling(final ReactAztecText view, boolean onPasteHandling) {
+        view.shouldHandleOnPaste = onPasteHandling;
     }
 
     @ReactProp(name = "placeholder")
@@ -353,108 +445,374 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
      */
     @ReactProp(name = "isSelected", defaultBoolean = false)
     public void isSelected(final ReactAztecText view, boolean selected) {
-        if (selected) {
-            view.requestFocus();
-        }
+//        if (selected) {
+//            view.focus();
+//        }
     }
 
-    @ReactProp(name = "onContentSizeChange", defaultBoolean = false)
-    public void setOnContentSizeChange(final ReactAztecText view, boolean onContentSizeChange) {
-        if (onContentSizeChange) {
-            view.setContentSizeWatcher(new AztecContentSizeWatcher(view));
+    @ReactProp(name = "selectionColor", customType = "Color")
+    public void setSelectionColor(ReactAztecText view, @Nullable Integer color) {
+        if (color == null) {
+            view.setHighlightColor(DefaultStyleValuesUtil.getDefaultTextColorHighlight(view.getContext()));
         } else {
-            view.setContentSizeWatcher(null);
+            view.setHighlightColor(color);
         }
+
+        setCursorColor(view, color);
     }
 
-    @ReactProp(name = "onSelectionChange", defaultBoolean = false)
-    public void setOnSelectionChange(final ReactAztecText view, boolean onSelectionChange) {
-        view.shouldHandleOnSelectionChange = onSelectionChange;
+    private void setCursorColor(ReactAztecText view, @Nullable Integer color) {
+        // Evil method that uses reflection because there is no public API to changes
+        // the cursor color programmatically.
+        // Based on http://stackoverflow.com/questions/25996032/how-to-change-programatically-edittext-cursor-color-in-android.
+        try {
+            // Get the original cursor drawable resource.
+            Field cursorDrawableResField = TextView.class.getDeclaredField("mCursorDrawableRes");
+            cursorDrawableResField.setAccessible(true);
+            int drawableResId = cursorDrawableResField.getInt(view);
+
+            // The view has no cursor drawable.
+            if (drawableResId == 0) {
+                return;
+            }
+
+            Drawable drawable = ContextCompat.getDrawable(view.getContext(), drawableResId);
+            if (color != null) {
+                drawable.setColorFilter(color, PorterDuff.Mode.SRC_IN);
+            }
+            Drawable[] drawables = {drawable, drawable};
+
+            // Update the current cursor drawable with the new one.
+            Field editorField = TextView.class.getDeclaredField("mEditor");
+            editorField.setAccessible(true);
+            Object editor = editorField.get(view);
+            Field cursorDrawableField = editor.getClass().getDeclaredField("mCursorDrawable");
+            cursorDrawableField.setAccessible(true);
+            cursorDrawableField.set(editor, drawables);
+        } catch (NoSuchFieldException ex) {
+            // Ignore errors to avoid crashing if these private fields don't exist on modified
+            // or future android versions.
+        } catch (IllegalAccessException ex) {}
     }
 
-    @ReactProp(name = "onScroll", defaultBoolean = false)
-    public void setOnScroll(final ReactAztecText view, boolean onScroll) {
-        if (onScroll) {
-            view.setScrollWatcher(new AztecScrollWatcher(view));
+    @ReactProp(name = "caretHidden", defaultBoolean = false)
+    public void setCaretHidden(ReactAztecText view, boolean caretHidden) {
+        view.setCursorVisible(!caretHidden);
+    }
+
+    @ReactProp(name = "contextMenuHidden", defaultBoolean = false)
+    public void setContextMenuHidden(ReactAztecText view, boolean contextMenuHidden) {
+        final boolean _contextMenuHidden = contextMenuHidden;
+        view.setOnLongClickListener(new View.OnLongClickListener() {
+            public boolean onLongClick(View v) {
+                return _contextMenuHidden;
+            };
+        });
+    }
+
+    @ReactProp(name = "selectTextOnFocus", defaultBoolean = false)
+    public void setSelectTextOnFocus(ReactAztecText view, boolean selectTextOnFocus) {
+        view.setSelectAllOnFocus(selectTextOnFocus);
+    }
+
+    @ReactProp(name = "colour", customType = "Color")
+    public void setColor(ReactAztecText view, @Nullable Integer color) {
+        if (color == null) {
+            view.setTextColor(DefaultStyleValuesUtil.getDefaultTextColor(view.getContext()));
         } else {
-            view.setScrollWatcher(null);
+            view.setTextColor(color);
         }
     }
 
-    @ReactProp(name = "onEnter", defaultBoolean = false)
-    public void setOnEnterHandling(final ReactAztecText view, boolean onEnterHandling) {
-        view.shouldHandleOnEnter = onEnterHandling;
-    }
+    @ReactProp(name = "underlineColorAndroid", customType = "Color")
+    public void setUnderlineColor(ReactAztecText view, @Nullable Integer underlineColor) {
+        // Drawable.mutate() can sometimes crash due to an AOSP bug:
+        // See https://code.google.com/p/android/issues/detail?id=191754 for more info
+        Drawable background = view.getBackground();
+        Drawable drawableToMutate = background.getConstantState() != null ?
+                background.mutate() :
+                background;
 
-    @ReactProp(name = "onBackspace", defaultBoolean = false)
-    public void setOnBackspaceHandling(final ReactAztecText view, boolean onBackspaceHandling) {
-        view.shouldHandleOnBackspace = onBackspaceHandling;
-    }
-
-    @ReactProp(name = "onPaste", defaultBoolean = false)
-    public void setOnPasteHandling(final ReactAztecText view, boolean onPasteHandling) {
-        view.shouldHandleOnPaste = onPasteHandling;
-    }
-
-    @Override
-    public Map<String, Integer> getCommandsMap() {
-        return MapBuilder.<String, Integer>builder()
-                .put("focusTextInput", mFocusTextInputCommandCode)
-                .put("blurTextInput", mBlurTextInputCommandCode)
-                .build();
-    }
-
-    @Override
-    public void receiveCommand(final ReactAztecText parent, int commandType, @Nullable ReadableArray args) {
-        Assertions.assertNotNull(parent);
-        if (commandType == mFocusTextInputCommandCode) {
-            parent.requestFocusFromJS();
-            return;
-        } else if (commandType == mBlurTextInputCommandCode) {
-            parent.clearFocusFromJS();
-            return;
+        if (underlineColor == null) {
+            drawableToMutate.clearColorFilter();
+        } else {
+            drawableToMutate.setColorFilter(underlineColor, PorterDuff.Mode.SRC_IN);
         }
-        super.receiveCommand(parent, commandType, args);
     }
 
-    @Override
-    protected void addEventEmitters(final ThemedReactContext reactContext, final ReactAztecText aztecText) {
-        aztecText.addTextChangedListener(new AztecTextWatcher(reactContext, aztecText));
-        aztecText.setOnFocusChangeListener(
-                new View.OnFocusChangeListener() {
-                    public void onFocusChange(View v, boolean hasFocus) {
-                        EventDispatcher eventDispatcher = reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
-                        final ReactAztecText editText = (ReactAztecText)v;
-                        if (hasFocus) {
-                            eventDispatcher.dispatchEvent(
-                                    new ReactAztecFocusEvent(
-                                            editText.getId()));
-                        } else {
-                            eventDispatcher.dispatchEvent(
-                                    new ReactAztecBlurEvent(
-                                            editText.getId()));
+    @ReactProp(name = ViewProps.TEXT_ALIGN)
+    public void setTextAlign(ReactAztecText view, @Nullable String textAlign) {
+        if (textAlign == null || "auto".equals(textAlign)) {
+            view.setGravityHorizontal(Gravity.NO_GRAVITY);
+        } else if ("left".equals(textAlign)) {
+            view.setGravityHorizontal(Gravity.LEFT);
+        } else if ("right".equals(textAlign)) {
+            view.setGravityHorizontal(Gravity.RIGHT);
+        } else if ("center".equals(textAlign)) {
+            view.setGravityHorizontal(Gravity.CENTER_HORIZONTAL);
+        } else if ("justify".equals(textAlign)) {
+            // Fallback gracefully for cross-platform compat instead of error
+            view.setGravityHorizontal(Gravity.LEFT);
+        } else {
+            throw new JSApplicationIllegalArgumentException("Invalid textAlign: " + textAlign);
+        }
+    }
 
-                            eventDispatcher.dispatchEvent(
-                                    new ReactAztecEndEditingEvent(
-                                            editText.getId(),
-                                            editText.toHtml(false)));
-                        }
+    @ReactProp(name = ViewProps.TEXT_ALIGN_VERTICAL)
+    public void setTextAlignVertical(ReactAztecText view, @Nullable String textAlignVertical) {
+        if (textAlignVertical == null || "auto".equals(textAlignVertical)) {
+            view.setGravityVertical(Gravity.NO_GRAVITY);
+        } else if ("top".equals(textAlignVertical)) {
+            view.setGravityVertical(Gravity.TOP);
+        } else if ("bottom".equals(textAlignVertical)) {
+            view.setGravityVertical(Gravity.BOTTOM);
+        } else if ("center".equals(textAlignVertical)) {
+            view.setGravityVertical(Gravity.CENTER_VERTICAL);
+        } else {
+            throw new JSApplicationIllegalArgumentException("Invalid textAlignVertical: " + textAlignVertical);
+        }
+    }
+
+    @ReactProp(name = "inlineImageLeft")
+    public void setInlineImageLeft(ReactAztecText view, @Nullable String resource) {
+        int id = ResourceDrawableIdHelper.getInstance().getResourceDrawableId(view.getContext(), resource);
+        view.setCompoundDrawablesWithIntrinsicBounds(id, 0, 0, 0);
+    }
+
+    @ReactProp(name = "inlineImagePadding")
+    public void setInlineImagePadding(ReactAztecText view, int padding) {
+        view.setCompoundDrawablePadding(padding);
+    }
+
+    @ReactProp(name = "editable", defaultBoolean = true)
+    public void setEditable(ReactAztecText view, boolean editable) {
+        view.setEnabled(editable);
+    }
+
+    @ReactProp(name = ViewProps.NUMBER_OF_LINES, defaultInt = 1)
+    public void setNumLines(ReactAztecText view, int numLines) {
+        view.setLines(numLines);
+    }
+
+    @ReactProp(name = "maxLength")
+    public void setMaxLength(ReactAztecText view, @Nullable Integer maxLength) {
+        InputFilter [] currentFilters = view.getFilters();
+        InputFilter[] newFilters = EMPTY_FILTERS;
+
+        if (maxLength == null) {
+            if (currentFilters.length > 0) {
+                LinkedList<InputFilter> list = new LinkedList<>();
+                for (int i = 0; i < currentFilters.length; i++) {
+                    if (!(currentFilters[i] instanceof InputFilter.LengthFilter)) {
+                        list.add(currentFilters[i]);
                     }
-                });
+                }
+                if (!list.isEmpty()) {
+                    newFilters = (InputFilter[]) list.toArray(new InputFilter[list.size()]);
+                }
+            }
+        } else {
+            if (currentFilters.length > 0) {
+                newFilters = currentFilters;
+                boolean replaced = false;
+                for (int i = 0; i < currentFilters.length; i++) {
+                    if (currentFilters[i] instanceof InputFilter.LengthFilter) {
+                        currentFilters[i] = new InputFilter.LengthFilter(maxLength);
+                        replaced = true;
+                    }
+                }
+                if (!replaced) {
+                    newFilters = new InputFilter[currentFilters.length + 1];
+                    System.arraycopy(currentFilters, 0, newFilters, 0, currentFilters.length);
+                    currentFilters[currentFilters.length] = new InputFilter.LengthFilter(maxLength);
+                }
+            } else {
+                newFilters = new InputFilter[1];
+                newFilters[0] = new InputFilter.LengthFilter(maxLength);
+            }
+        }
 
-        // Don't think we need to add setOnEditorActionListener here (intercept Enter for example), but
-        // in case check ReactTextInputManager
+        view.setFilters(newFilters);
     }
 
-    private class AztecTextWatcher implements TextWatcher {
+    @ReactProp(name = "autoCorrect")
+    public void setAutoCorrect(ReactAztecText view, @Nullable Boolean autoCorrect) {
+        // clear auto correct flags, set SUGGESTIONS or NO_SUGGESTIONS depending on value
+        updateStagedInputTypeFlag(
+                view,
+                InputType.TYPE_TEXT_FLAG_AUTO_CORRECT | InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS,
+                autoCorrect != null ?
+                        (autoCorrect.booleanValue() ?
+                                InputType.TYPE_TEXT_FLAG_AUTO_CORRECT : InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
+                        : 0);
+    }
+
+    @ReactProp(name = "multiline", defaultBoolean = false)
+    public void setMultiline(ReactAztecText view, boolean multiline) {
+        updateStagedInputTypeFlag(
+                view,
+                multiline ? 0 : InputType.TYPE_TEXT_FLAG_MULTI_LINE,
+                multiline ? InputType.TYPE_TEXT_FLAG_MULTI_LINE : 0);
+    }
+
+    @ReactProp(name = "secureTextEntry", defaultBoolean = false)
+    public void setSecureTextEntry(ReactAztecText view, boolean password) {
+        updateStagedInputTypeFlag(
+                view,
+                password ? 0 :
+                        InputType.TYPE_NUMBER_VARIATION_PASSWORD | InputType.TYPE_TEXT_VARIATION_PASSWORD,
+                password ? InputType.TYPE_TEXT_VARIATION_PASSWORD : 0);
+        checkPasswordType(view);
+    }
+
+    @ReactProp(name = "autoCapitalize")
+    public void setAutoCapitalize(ReactAztecText view, int autoCapitalize) {
+        updateStagedInputTypeFlag(
+                view,
+                InputType.TYPE_TEXT_FLAG_CAP_SENTENCES | InputType.TYPE_TEXT_FLAG_CAP_WORDS |
+                        InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS,
+                autoCapitalize);
+    }
+
+    @ReactProp(name = "keyboardType")
+    public void setKeyboardType(ReactAztecText view, @Nullable String keyboardType) {
+        int flagsToSet = InputType.TYPE_CLASS_TEXT;
+        if (KEYBOARD_TYPE_NUMERIC.equalsIgnoreCase(keyboardType)) {
+            flagsToSet = INPUT_TYPE_KEYBOARD_NUMBERED;
+        } else if (KEYBOARD_TYPE_NUMBER_PAD.equalsIgnoreCase(keyboardType)) {
+            flagsToSet = INPUT_TYPE_KEYBOARD_NUMBER_PAD;
+        } else if (KEYBOARD_TYPE_DECIMAL_PAD.equalsIgnoreCase(keyboardType)) {
+            flagsToSet = INPUT_TYPE_KEYBOARD_DECIMAL_PAD;
+        } else if (KEYBOARD_TYPE_EMAIL_ADDRESS.equalsIgnoreCase(keyboardType)) {
+            flagsToSet = InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS | InputType.TYPE_CLASS_TEXT;
+        } else if (KEYBOARD_TYPE_PHONE_PAD.equalsIgnoreCase(keyboardType)) {
+            flagsToSet = InputType.TYPE_CLASS_PHONE;
+        } else if (KEYBOARD_TYPE_VISIBLE_PASSWORD.equalsIgnoreCase(keyboardType)) {
+            // This will supercede secureTextEntry={false}. If it doesn't, due to the way
+            //  the flags work out, the underlying field will end up a URI-type field.
+            flagsToSet = InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD;
+        }
+        updateStagedInputTypeFlag(
+                view,
+                KEYBOARD_TYPE_FLAGS,
+                flagsToSet);
+        checkPasswordType(view);
+    }
+
+    @ReactProp(name = "returnKeyType")
+    public void setReturnKeyType(ReactAztecText view, String returnKeyType) {
+        view.setReturnKeyType(returnKeyType);
+    }
+
+    @ReactProp(name = "disableFullscreenUI", defaultBoolean = false)
+    public void setDisableFullscreenUI(ReactAztecText view, boolean disableFullscreenUI) {
+        view.setDisableFullscreenUI(disableFullscreenUI);
+    }
+
+    private static final int IME_ACTION_ID = 0x670;
+
+    @ReactProp(name = "returnKeyLabel")
+    public void setReturnKeyLabel(ReactAztecText view, String returnKeyLabel) {
+        view.setImeActionLabel(returnKeyLabel, IME_ACTION_ID);
+    }
+
+    @ReactPropGroup(names = {
+            ViewProps.BORDER_RADIUS,
+            ViewProps.BORDER_TOP_LEFT_RADIUS,
+            ViewProps.BORDER_TOP_RIGHT_RADIUS,
+            ViewProps.BORDER_BOTTOM_RIGHT_RADIUS,
+            ViewProps.BORDER_BOTTOM_LEFT_RADIUS
+    }, defaultFloat = YogaConstants.UNDEFINED)
+    public void setBorderRadius(ReactAztecText view, int index, float borderRadius) {
+        if (!YogaConstants.isUndefined(borderRadius)) {
+            borderRadius = PixelUtil.toPixelFromDIP(borderRadius);
+        }
+
+        if (index == 0) {
+            view.setBorderRadius(borderRadius);
+        } else {
+            view.setBorderRadius(borderRadius, index - 1);
+        }
+    }
+
+    @ReactProp(name = "borderStyle")
+    public void setBorderStyle(ReactAztecText view, @Nullable String borderStyle) {
+        view.setBorderStyle(borderStyle);
+    }
+
+    @ReactPropGroup(names = {
+            ViewProps.BORDER_WIDTH,
+            ViewProps.BORDER_LEFT_WIDTH,
+            ViewProps.BORDER_RIGHT_WIDTH,
+            ViewProps.BORDER_TOP_WIDTH,
+            ViewProps.BORDER_BOTTOM_WIDTH,
+    }, defaultFloat = YogaConstants.UNDEFINED)
+    public void setBorderWidth(ReactAztecText view, int index, float width) {
+        if (!YogaConstants.isUndefined(width)) {
+            width = PixelUtil.toPixelFromDIP(width);
+        }
+        view.setBorderWidth(SPACING_TYPES[index], width);
+    }
+
+    @ReactPropGroup(names = {
+            "borderColor", "borderLeftColor", "borderRightColor", "borderTopColor", "borderBottomColor"
+    }, customType = "Color")
+    public void setBorderColor(ReactAztecText view, int index, Integer color) {
+        float rgbComponent = color == null ? YogaConstants.UNDEFINED : (float) ((int)color & 0x00FFFFFF);
+        float alphaComponent = color == null ? YogaConstants.UNDEFINED : (float) ((int)color >>> 24);
+        view.setBorderColor(SPACING_TYPES[index], rgbComponent, alphaComponent);
+    }
+
+    @Override
+    protected void onAfterUpdateTransaction(ReactAztecText view) {
+        super.onAfterUpdateTransaction(view);
+        view.commitStagedInputType();
+    }
+
+    // Sets the correct password type, since numeric and text passwords have different types
+    private static void checkPasswordType(ReactAztecText view) {
+        if ((view.getStagedInputType() & INPUT_TYPE_KEYBOARD_NUMBERED) != 0 &&
+                (view.getStagedInputType() & InputType.TYPE_TEXT_VARIATION_PASSWORD) != 0) {
+            // Text input type is numbered password, remove text password variation, add numeric one
+            updateStagedInputTypeFlag(
+                    view,
+                    InputType.TYPE_TEXT_VARIATION_PASSWORD,
+                    InputType.TYPE_NUMBER_VARIATION_PASSWORD);
+        }
+    }
+
+    /**
+     * This code was taken from the method parseNumericFontWeight of the class ReactTextShadowNode
+     * TODO: Factor into a common place they can both use
+     *
+     * Return -1 if the input string is not a valid numeric fontWeight (100, 200, ..., 900), otherwise
+     * return the weight.
+     */
+    private static int parseNumericFontWeight(String fontWeightString) {
+        // This should be much faster than using regex to verify input and Integer.parseInt
+        return fontWeightString.length() == 3 && fontWeightString.endsWith("00")
+                && fontWeightString.charAt(0) <= '9' && fontWeightString.charAt(0) >= '1' ?
+                100 * (fontWeightString.charAt(0) - '0') : -1;
+    }
+
+    private static void updateStagedInputTypeFlag(
+            ReactAztecText view,
+            int flagsToUnset,
+            int flagsToSet) {
+        view.setStagedInputType((view.getStagedInputType() & ~flagsToUnset) | flagsToSet);
+    }
+
+    private class ReactTextInputTextWatcher implements TextWatcher {
 
         private EventDispatcher mEventDispatcher;
         private ReactAztecText mEditText;
         private String mPreviousText;
 
-        public AztecTextWatcher(final ReactContext reactContext, final ReactAztecText aztecText) {
+        public ReactTextInputTextWatcher(
+                final ReactContext reactContext,
+                final ReactAztecText editText) {
             mEventDispatcher = reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
-            mEditText = aztecText;
+            mEditText = editText;
             mPreviousText = null;
         }
 
@@ -502,54 +860,151 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
         }
     }
 
-    private class AztecContentSizeWatcher implements com.facebook.react.views.textinput.ContentSizeWatcher {
-        private ReactAztecText mReactAztecText;
+    @Override
+    protected void addEventEmitters(
+            final ThemedReactContext reactContext,
+            final ReactAztecText editText) {
+        editText.addTextChangedListener(new ReactTextInputTextWatcher(reactContext, editText));
+        editText.setOnFocusChangeListener(
+                new View.OnFocusChangeListener() {
+                    public void onFocusChange(View v, boolean hasFocus) {
+                        EventDispatcher eventDispatcher =
+                                reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
+                        if (hasFocus) {
+                            eventDispatcher.dispatchEvent(
+                                    new ReactTextInputFocusEvent(
+                                            editText.getId()));
+                        } else {
+                            eventDispatcher.dispatchEvent(
+                                    new ReactTextInputBlurEvent(
+                                            editText.getId()));
+
+                            eventDispatcher.dispatchEvent(
+                                    new ReactTextInputEndEditingEvent(
+                                            editText.getId(),
+                                            editText.getText().toString()));
+                        }
+                    }
+                });
+
+        editText.setOnEditorActionListener(
+                new TextView.OnEditorActionListener() {
+                    @Override
+                    public boolean onEditorAction(TextView v, int actionId, KeyEvent keyEvent) {
+                        // Any 'Enter' action will do
+                        if ((actionId & EditorInfo.IME_MASK_ACTION) > 0 ||
+                                actionId == EditorInfo.IME_NULL) {
+                            boolean blurOnSubmit = editText.getBlurOnSubmit();
+                            boolean isMultiline = ((editText.getInputType() &
+                                    InputType.TYPE_TEXT_FLAG_MULTI_LINE) != 0);
+
+                            // Motivation:
+                            // * blurOnSubmit && isMultiline => Clear focus; prevent default behaviour (return true);
+                            // * blurOnSubmit && !isMultiline => Clear focus; prevent default behaviour (return true);
+                            // * !blurOnSubmit && isMultiline => Perform default behaviour (return false);
+                            // * !blurOnSubmit && !isMultiline => Prevent default behaviour (return true).
+                            // Additionally we always generate a `submit` event.
+
+                            EventDispatcher eventDispatcher =
+                                    reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
+
+                            eventDispatcher.dispatchEvent(
+                                    new ReactTextInputSubmitEditingEvent(
+                                            editText.getId(),
+                                            editText.getText().toString()));
+
+                            if (blurOnSubmit) {
+                                editText.clearFocus();
+                            }
+
+                            // Prevent default behavior except when we want it to insert a newline.
+                            return blurOnSubmit || !isMultiline;
+                        }
+
+                        return true;
+                    }
+                });
+    }
+
+    private class ReactContentSizeWatcher implements ContentSizeWatcher {
+        private ReactAztecText mEditText;
         private EventDispatcher mEventDispatcher;
         private int mPreviousContentWidth = 0;
         private int mPreviousContentHeight = 0;
 
-        public AztecContentSizeWatcher(ReactAztecText view) {
-            mReactAztecText = view;
-            ReactContext reactContext = (ReactContext) mReactAztecText.getContext();
+        public ReactContentSizeWatcher(ReactAztecText editText) {
+            mEditText = editText;
+            ReactContext reactContext = (ReactContext) editText.getContext();
             mEventDispatcher = reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
         }
 
         @Override
         public void onLayout() {
-            int contentWidth = mReactAztecText.getWidth();
-            int contentHeight = mReactAztecText.getHeight();
+            int contentWidth = mEditText.getWidth();
+            int contentHeight = mEditText.getHeight();
 
             // Use instead size of text content within EditText when available
-            if (mReactAztecText.getLayout() != null) {
-                contentWidth = mReactAztecText.getCompoundPaddingLeft() + mReactAztecText.getLayout().getWidth() +
-                        mReactAztecText.getCompoundPaddingRight();
-                contentHeight = mReactAztecText.getCompoundPaddingTop() + mReactAztecText.getLayout().getHeight() +
-                        mReactAztecText.getCompoundPaddingBottom();
+            if (mEditText.getLayout() != null) {
+                contentWidth = mEditText.getCompoundPaddingLeft() + mEditText.getLayout().getWidth() +
+                        mEditText.getCompoundPaddingRight();
+                contentHeight = mEditText.getCompoundPaddingTop() + mEditText.getLayout().getHeight() +
+                        mEditText.getCompoundPaddingBottom();
             }
 
             if (contentWidth != mPreviousContentWidth || contentHeight != mPreviousContentHeight) {
                 mPreviousContentHeight = contentHeight;
                 mPreviousContentWidth = contentWidth;
 
-                // FIXME: Note the 2 hacks here
                 mEventDispatcher.dispatchEvent(
                         new ReactContentSizeChangedEvent(
-                                mReactAztecText.getId(),
+                                mEditText.getId(),
                                 PixelUtil.toDIPFromPixel(contentWidth),
                                 PixelUtil.toDIPFromPixel(contentHeight)));
             }
         }
     }
 
-    private class AztecScrollWatcher implements ScrollWatcher {
+    private class ReactSelectionWatcher implements SelectionWatcher {
 
-        private ReactAztecText mReactAztecText;
+        private ReactAztecText mReactEditText;
+        private EventDispatcher mEventDispatcher;
+        private int mPreviousSelectionStart;
+        private int mPreviousSelectionEnd;
+
+        public ReactSelectionWatcher(ReactAztecText editText) {
+            mReactEditText = editText;
+            ReactContext reactContext = (ReactContext) editText.getContext();
+            mEventDispatcher = reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
+        }
+
+        @Override
+        public void onSelectionChanged(int start, int end) {
+            // Android will call us back for both the SELECTION_START span and SELECTION_END span in text
+            // To prevent double calling back into js we cache the result of the previous call and only
+            // forward it on if we have new values
+            if (mPreviousSelectionStart != start || mPreviousSelectionEnd != end) {
+                mEventDispatcher.dispatchEvent(
+                        new ReactTextInputSelectionEvent(
+                                mReactEditText.getId(),
+                                start,
+                                end
+                        ));
+
+                mPreviousSelectionStart = start;
+                mPreviousSelectionEnd = end;
+            }
+        }
+    }
+
+    private class ReactScrollWatcher implements ScrollWatcher {
+
+        private ReactAztecText mReactEditText;
         private EventDispatcher mEventDispatcher;
         private int mPreviousHoriz;
         private int mPreviousVert;
 
-        public AztecScrollWatcher(ReactAztecText editText) {
-            mReactAztecText = editText;
+        public ReactScrollWatcher(ReactAztecText editText) {
+            mReactEditText = editText;
             ReactContext reactContext = (ReactContext) editText.getContext();
             mEventDispatcher = reactContext.getNativeModule(UIManagerModule.class).getEventDispatcher();
         }
@@ -558,7 +1013,7 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
         public void onScrollChanged(int horiz, int vert, int oldHoriz, int oldVert) {
             if (mPreviousHoriz != horiz || mPreviousVert != vert) {
                 ScrollEvent event = ScrollEvent.obtain(
-                        mReactAztecText.getId(),
+                        mReactEditText.getId(),
                         ScrollEventType.SCROLL,
                         horiz,
                         vert,
@@ -566,8 +1021,8 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
                         0f, // can't get y velocity
                         0, // can't get content width
                         0, // can't get content height
-                        mReactAztecText.getWidth(),
-                        mReactAztecText.getHeight());
+                        mReactEditText.getWidth(),
+                        mReactEditText.getHeight());
 
                 mEventDispatcher.dispatchEvent(event);
 
@@ -575,5 +1030,20 @@ public class ReactAztecManager extends SimpleViewManager<ReactAztecText> {
                 mPreviousVert = vert;
             }
         }
+    }
+
+    @Override
+    public @Nullable Map getExportedViewConstants() {
+        return MapBuilder.of(
+                "AutoCapitalizationType",
+                MapBuilder.of(
+                        "none",
+                        0,
+                        "characters",
+                        InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS,
+                        "words",
+                        InputType.TYPE_TEXT_FLAG_CAP_WORDS,
+                        "sentences",
+                        InputType.TYPE_TEXT_FLAG_CAP_SENTENCES));
     }
 }
