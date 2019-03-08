@@ -312,7 +312,7 @@ export default compose( [
 			getSelectedBlockClientId,
 			isBlockSelected,
 			getBlockMode,
-		} = select( 'core/editor' );
+		} = select( 'core/block-editor' );
 		const selectedBlockClientId = getSelectedBlockClientId();
 
 		return {
@@ -327,7 +327,7 @@ export default compose( [
 	} ),
 	withDispatch( ( dispatch ) => {
 		const { clearSelectedBlock, insertBlock, replaceBlock, selectBlock } = dispatch(
-			'core/editor'
+			'core/block-editor'
 		);
 
 		return {

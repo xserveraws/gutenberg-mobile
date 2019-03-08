@@ -110,6 +110,8 @@ export default compose( [
 		const {
 			getBlocks,
 			getBlockMode,
+		} = select( 'core/block-editor' );
+		const {
 			getEditedPostContent,
 			getEditedPostAttribute,
 		} = select( 'core/editor' );
@@ -123,10 +125,12 @@ export default compose( [
 	} ),
 	withDispatch( ( dispatch ) => {
 		const {
-			editPost,
 			resetBlocks,
-			setupEditor,
 			toggleBlockMode,
+		} = dispatch( 'core/block-editor' );
+		const {
+			editPost,
+			setupEditor,
 		} = dispatch( 'core/editor' );
 
 		return {

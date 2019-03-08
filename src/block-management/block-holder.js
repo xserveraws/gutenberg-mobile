@@ -191,7 +191,7 @@ export default compose( [
 			getPreviousBlockClientId,
 			getNextBlockClientId,
 			isBlockSelected,
-		} = select( 'core/editor' );
+		} = select( 'core/block-editor' );
 		const name = getBlockName( clientId );
 		const attributes = getBlockAttributes( clientId );
 		const order = getBlockIndex( clientId, rootClientId );
@@ -221,7 +221,7 @@ export default compose( [
 			replaceBlocks,
 			selectBlock,
 			updateBlockAttributes,
-		} = dispatch( 'core/editor' );
+		} = dispatch( 'core/block-editor' );
 
 		return {
 			mergeBlocks,
