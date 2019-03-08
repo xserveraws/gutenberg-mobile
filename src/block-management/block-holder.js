@@ -21,7 +21,7 @@ import type { BlockType } from '../store/types';
 import styles from './block-holder.scss';
 
 // Gutenberg imports
-import { BlockEdit } from '@wordpress/editor';
+import { BlockEdit } from '@wordpress/block-editor';
 
 import TextInputState from 'react-native/lib/TextInputState';
 

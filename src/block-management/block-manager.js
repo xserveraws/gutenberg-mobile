@@ -21,14 +21,18 @@ import BlockPicker from './block-picker';
 import HTMLTextInput from '../components/html-text-input';
 import BlockToolbar from './block-toolbar';
 import KeyboardAvoidingView from '../components/keyboard-avoiding-view';
-import { KeyboardAwareFlatList, handleCaretVerticalPositionChange } from '../components/keyboard-aware-flat-list';
+import {
+	KeyboardAwareFlatList,
+	handleCaretVerticalPositionChange,
+} from '../components/keyboard-aware-flat-list';
 import SafeArea from 'react-native-safe-area';
 
 // Gutenberg imports
 import { withDispatch, withSelect } from '@wordpress/data';
 import { compose } from '@wordpress/compose';
 import { createBlock, isUnmodifiedDefaultBlock } from '@wordpress/blocks';
-import { DefaultBlockAppender, PostTitle } from '@wordpress/editor';
+import { DefaultBlockAppender } from '@wordpress/block-editor';
+import { PostTitle } from '@wordpress/editor';
 import { sendNativeEditorDidLayout, subscribeSetFocusOnTitle } from 'react-native-gutenberg-bridge';
 
 type PropsType = {
@@ -50,9 +54,9 @@ type PropsType = {
 type StateType = {
 	blockTypePickerVisible: boolean,
 	isKeyboardVisible: boolean,
-	rootViewHeight: number;
-	safeAreaBottomInset: number;
-	isFullyBordered: boolean;
+	rootViewHeight: number,
+	safeAreaBottomInset: number,
+	isFullyBordered: boolean,
 };
 
 export class BlockManager extends React.Component<PropsType, StateType> {
@@ -64,7 +68,9 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		super( props );
 
 		( this: any ).renderItem = this.renderItem.bind( this );
-		( this: any ).shouldFlatListPreventAutomaticScroll = this.shouldFlatListPreventAutomaticScroll.bind( this );
+		( this: any ).shouldFlatListPreventAutomaticScroll = this.shouldFlatListPreventAutomaticScroll.bind(
+			this
+		);
 		( this: any ).renderDefaultBlockAppender = this.renderDefaultBlockAppender.bind( this );
 		( this: any ).renderHeader = this.renderHeader.bind( this );
 		( this: any ).onSafeAreaInsetsUpdate = this.onSafeAreaInsetsUpdate.bind( this );
@@ -134,17 +140,19 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		if ( isFullyBordered !== this.state.isFullyBordered ) {
 			this.setState( { ...this.state, isFullyBordered } );
 		}
-	}
+	};
 
 	blockHolderBorderStyle() {
-		return this.state.isFullyBordered ? styles.blockHolderFullBordered : styles.blockHolderSemiBordered;
+		return this.state.isFullyBordered ?
+			styles.blockHolderFullBordered :
+			styles.blockHolderSemiBordered;
 	}
 
 	componentDidMount() {
 		Keyboard.addListener( 'keyboardDidShow', this.keyboardDidShow );
 		Keyboard.addListener( 'keyboardDidHide', this.keyboardDidHide );
 		SafeArea.addEventListener( 'safeAreaInsetsForRootViewDidChange', this.onSafeAreaInsetsUpdate );
-		this.subscriptionParentSetFocusOnTitle = subscribeSetFocusOnTitle( ( ) => {
+		this.subscriptionParentSetFocusOnTitle = subscribeSetFocusOnTitle( () => {
 			if ( this.postTitleRef ) {
 				this.postTitleRef.focus();
 			}
@@ -154,7 +162,10 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	componentWillUnmount() {
 		Keyboard.removeListener( 'keyboardDidShow', this.keyboardDidShow );
 		Keyboard.removeListener( 'keyboardDidHide', this.keyboardDidHide );
-		SafeArea.removeEventListener( 'safeAreaInsetsForRootViewDidChange', this.onSafeAreaInsetsUpdate );
+		SafeArea.removeEventListener(
+			'safeAreaInsetsForRootViewDidChange',
+			this.onSafeAreaInsetsUpdate
+		);
 		if ( this.subscriptionParentSetFocusOnTitle ) {
 			this.subscriptionParentSetFocusOnTitle.remove();
 		}
@@ -170,7 +181,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 
 	onCaretVerticalPositionChange = ( targetId: number, caretY: number, previousCaretY: ?number ) => {
 		handleCaretVerticalPositionChange( this.scrollViewRef, targetId, caretY, previousCaretY );
-	}
+	};
 
 	scrollViewInnerRef( ref: Object ) {
 		this.scrollViewRef = ref;
@@ -181,9 +192,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	}
 
 	renderDefaultBlockAppender() {
-		return (
-			<DefaultBlockAppender rootClientId={ this.props.rootClientId } />
-		);
+		return <DefaultBlockAppender rootClientId={ this.props.rootClientId } />;
 	}
 
 	renderHeader() {
@@ -196,7 +205,8 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 				onUpdate={ this.props.setTitleAction }
 				placeholder={ __( 'Add title' ) }
 				borderStyle={ this.blockHolderBorderStyle() }
-				focusedBorderColor={ styles.blockHolderFocused.borderColor } />
+				focusedBorderColor={ styles.blockHolderFocused.borderColor }
+			/>
 		);
 	}
 
@@ -241,11 +251,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	render() {
 		return (
 			<SafeAreaView style={ styles.container } onLayout={ this.onRootViewLayout }>
-				{
-					this.props.showHtml ?
-						this.renderHTML() :
-						this.renderList()
-				}
+				{ this.props.showHtml ? this.renderHTML() : this.renderList() }
 				{ this.state.blockTypePickerVisible && (
 					<BlockPicker
 						onDismiss={ () => this.showBlockTypePicker( false ) }
@@ -279,11 +285,12 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 					borderStyle={ this.blockHolderBorderStyle() }
 					focusedBorderColor={ styles.blockHolderFocused.borderColor }
 				/>
-				{ this.state.blockTypePickerVisible && this.props.isBlockSelected( clientId ) && (
-					<View style={ styles.containerStyleAddHere } >
-						<View style={ styles.lineStyleAddHere }></View>
-						<Text style={ styles.labelStyleAddHere } >{ __( 'ADD BLOCK HERE' ) }</Text>
-						<View style={ styles.lineStyleAddHere }></View>
+				{ this.state.blockTypePickerVisible &&
+					this.props.isBlockSelected( clientId ) && (
+					<View style={ styles.containerStyleAddHere }>
+						<View style={ styles.lineStyleAddHere } />
+						<Text style={ styles.labelStyleAddHere }>{ __( 'ADD BLOCK HERE' ) }</Text>
+						<View style={ styles.lineStyleAddHere } />
 					</View>
 				) }
 			</View>
@@ -291,9 +298,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 	}
 
 	renderHTML() {
-		return (
-			<HTMLTextInput { ...this.props } parentHeight={ this.state.rootViewHeight } />
-		);
+		return <HTMLTextInput { ...this.props } parentHeight={ this.state.rootViewHeight } />;
 	}
 }
 
@@ -321,12 +326,9 @@ export default compose( [
 		};
 	} ),
 	withDispatch( ( dispatch ) => {
-		const {
-			clearSelectedBlock,
-			insertBlock,
-			replaceBlock,
-			selectBlock,
-		} = dispatch( 'core/editor' );
+		const { clearSelectedBlock, insertBlock, replaceBlock, selectBlock } = dispatch(
+			'core/editor'
+		);
 
 		return {
 			insertBlock,
