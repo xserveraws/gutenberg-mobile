@@ -78,6 +78,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 		( this: any ).onCaretVerticalPositionChange = this.onCaretVerticalPositionChange.bind( this );
 		( this: any ).scrollViewInnerRef = this.scrollViewInnerRef.bind( this );
 		( this: any ).onContentViewLayout = this.onContentViewLayout.bind( this );
+		( this: any ).focusScrollView = this.focusScrollView.bind( this );
 
 		this.state = {
 			blockTypePickerVisible: false,
@@ -179,6 +180,11 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 
 	scrollViewInnerRef( ref: Object ) {
 		this.scrollViewRef = ref;
+	}
+
+	focusScrollView( ) {
+		console.log( 'Cerco di mettere il focus sulla scroll view' );
+		//this.scrollViewRef.focus();
 	}
 
 	shouldFlatListPreventAutomaticScroll() {
@@ -289,6 +295,7 @@ export class BlockManager extends React.Component<PropsType, StateType> {
 					rootClientId={ this.props.rootClientId }
 					onCaretVerticalPositionChange={ this.onCaretVerticalPositionChange }
 					borderStyle={ this.blockHolderBorderStyle() }
+					focusParentView={ this.focusScrollView }
 					focusedBorderColor={ styles.blockHolderFocused.borderColor }
 				/>
 				{ this.state.blockTypePickerVisible && this.props.isBlockSelected( clientId ) && (

@@ -14,8 +14,16 @@ type PropsType = {
 }
 
 export const KeyboardAwareFlatList = ( props: PropsType ) => {
+	const {
+		innerRef,
+	} = props;
+
 	return (
-		<KeyboardAvoidingView style={ { flex: 1 } }>
+		<KeyboardAvoidingView style={ { flex: 1 } }
+			innerRef={ ( ref ) => {
+				innerRef( ref );
+			} }
+		>
 			<FlatList { ...props } />
 		</KeyboardAvoidingView>
 	);

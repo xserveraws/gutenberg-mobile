@@ -8,14 +8,24 @@ import { View, KeyboardAvoidingView as AndroidKeyboardAvoidingView } from 'react
 
 type PropsType = {
 	...View.propTypes,
-	parentHeight: number;
+	innerRef?: Function,
+	parentHeight: number,
 }
 
 const KeyboardAvoidingView = ( propsType: PropsType ) => {
 	const { ...props } = propsType;
+	const {
+		innerRef,
+	} = props;
 
 	return (
-		<AndroidKeyboardAvoidingView { ...props } />
+		<AndroidKeyboardAvoidingView { ...props }
+			ref={ ( ref ) => {
+				if ( innerRef ) {
+					innerRef( ref );
+				}
+			} }
+		/>
 	);
 };
 

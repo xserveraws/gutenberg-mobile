@@ -46,6 +46,7 @@ type PropsType = BlockType & {
 	moveBlockUp: () => void,
 	moveBlockDown: () => void,
 	removeBlock: () => void,
+	focusParentView: () => void,
 };
 
 type StateType = {
@@ -79,9 +80,11 @@ export class BlockHolder extends React.Component<PropsType, StateType> {
 		switch ( button ) {
 			case InlineToolbarActions.UP:
 				this.props.moveBlockUp();
+				this.props.focusParentView();
 				break;
 			case InlineToolbarActions.DOWN:
 				this.props.moveBlockDown();
+				this.props.focusParentView();
 				break;
 			case InlineToolbarActions.DELETE:
 				this.props.removeBlock();
