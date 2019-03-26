@@ -72,6 +72,7 @@ export class BlockHolder extends React.Component<PropsType, StateType> {
 
 	onFocus = ( event: NativeSyntheticEvent<NativeTouchEvent> ) => {
 		if ( event ) {
+			throw new Error( 'This is a test error for logging' );
 			// == Hack for the Alpha ==
 			// When moving the focus from a TextInput field to another kind of field the call that hides the keyboard is not invoked
 			// properly, resulting in keyboard up when it should not be there.
