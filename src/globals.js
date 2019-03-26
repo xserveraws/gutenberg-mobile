@@ -39,3 +39,9 @@ if ( ! global.window.matchMedia ) {
 
 // Leverages existing console polyfill from react-native
 global.nativeLoggingHook = nativeLoggingHook;
+
+const previousErrorHandler = global.ErrorUtils.getGlobalHandler();
+global.ErrorUtils.setGlobalHandler( ( error, isFatal ) => {
+	nativeLoggingHook( error.toString(), isFatal ? 3 : 2 );
+	previousErrorHandler( error, isFatal );
+} );
