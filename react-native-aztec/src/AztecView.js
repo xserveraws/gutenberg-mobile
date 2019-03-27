@@ -1,45 +1,46 @@
 /**
  * @format
+ * @flow
  */
 
 /**
  * External dependencies
  */
-import PropTypes from 'prop-types';
-import React from 'react';
-import ReactNative, { requireNativeComponent, ViewPropTypes, UIManager, ColorPropType, TouchableWithoutFeedback } from 'react-native';
+import * as React from 'react';
+import ReactNative, { requireNativeComponent, ViewPropTypes, UIManager, TouchableWithoutFeedback, GestureResponderEvent } from 'react-native';
 import TextInputState from 'react-native/lib/TextInputState';
 
 const AztecManager = UIManager.getViewManagerConfig( 'RCTAztecView' );
 
-class AztecView extends React.Component {
-	selectionEndCaretY: number;
+type PropsType = {
+	activeFormats: Array<mixed>,
+	isSelected: boolean,
+	disableGutenbergMode: boolean,
+	text: string,
+	placeholder: string,
+	placeholderTextColor: string,
+	color: string,
+	maxImagesWidth: number,
+	minImagesWidth: number,
+	onFocus: GestureResponderEvent => void,
+	onBlur: any => void,
+	onContentSizeChange: any => void,
+	onEnter: any => void,
+	onBackspace: any => void,
+	onSelectionChange: ( number, number, string, any ) => void,
+	onHTMLContentWithCursor: ( string, number, number ) => void,
+	onCaretVerticalPositionChange: ( React.Node, number, number ) => void,
+	blockType: mixed,
+	...ViewPropTypes, // include the default view properties
+}
 
-	static propTypes = {
-		activeFormats: PropTypes.array,
-		isSelected: PropTypes.bool,
-		disableGutenbergMode: PropTypes.bool,
-		text: PropTypes.object,
-		placeholder: PropTypes.string,
-		placeholderTextColor: ColorPropType,
-		color: ColorPropType,
-		maxImagesWidth: PropTypes.number,
-		minImagesWidth: PropTypes.number,
-		onChange: PropTypes.func,
-		onFocus: PropTypes.func,
-		onBlur: PropTypes.func,
-		onContentSizeChange: PropTypes.func,
-		onEnter: PropTypes.func,
-		onBackspace: PropTypes.func,
-		onScroll: PropTypes.func,
-		onSelectionChange: PropTypes.func,
-		onHTMLContentWithCursor: PropTypes.func,
-		onCaretVerticalPositionChange: PropTypes.func,
-		blockType: PropTypes.object,
-		...ViewPropTypes, // include the default view properties
-	}
+type StateType = {
+};
 
-	dispatch( command, params ) {
+class AztecView extends React.Component<PropsType, StateType> {
+	selectionEndCaretY: ?number;
+
+	dispatch( command: string, params: mixed ) {
 		params = params || [];
 		UIManager.dispatchViewManagerCommand(
 			ReactNative.findNodeHandle( this ),
@@ -52,7 +53,7 @@ class AztecView extends React.Component {
 		this.dispatch( AztecManager.Commands.returnHTMLWithCursor );
 	}
 
-	_onContentSizeChange = ( event ) => {
+	_onContentSizeChange = ( event: any ) => {
 		if ( ! this.props.onContentSizeChange ) {
 			return;
 		}
@@ -61,7 +62,7 @@ class AztecView extends React.Component {
 		onContentSizeChange( size );
 	}
 
-	_onEnter = ( event ) => {
+	_onEnter = ( event: any ) => {
 		if ( ! this.props.onEnter ) {
 			return;
 		}
@@ -70,7 +71,7 @@ class AztecView extends React.Component {
 		onEnter( event );
 	}
 
-	_onBackspace = ( event ) => {
+	_onBackspace = ( event: any ) => {
 		if ( ! this.props.onBackspace ) {
 			return;
 		}
@@ -79,7 +80,7 @@ class AztecView extends React.Component {
 		onBackspace( event );
 	}
 
-	_onHTMLContentWithCursor = ( event ) => {
+	_onHTMLContentWithCursor = ( event: any ) => {
 		if ( ! this.props.onHTMLContentWithCursor ) {
 			return;
 		}
@@ -91,7 +92,7 @@ class AztecView extends React.Component {
 		onHTMLContentWithCursor( text, selectionStart, selectionEnd );
 	}
 
-	_onFocus = ( event ) => {
+	_onFocus = ( event: GestureResponderEvent ) => {
 		if ( ! this.props.onFocus ) {
 			return;
 		}
@@ -100,7 +101,7 @@ class AztecView extends React.Component {
 		onFocus( event );
 	}
 
-	_onBlur = ( event ) => {
+	_onBlur = ( event: any ) => {
 		this.selectionEndCaretY = null;
 		TextInputState.blurTextInput( ReactNative.findNodeHandle( this ) );
 
@@ -112,7 +113,7 @@ class AztecView extends React.Component {
 		onBlur( event );
 	}
 
-	_onSelectionChange = ( event ) => {
+	_onSelectionChange = ( event: any ) => {
 		if ( this.props.onSelectionChange ) {
 			const { selectionStart, selectionEnd, text } = event.nativeEvent;
 			const { onSelectionChange } = this.props;
@@ -120,7 +121,7 @@ class AztecView extends React.Component {
 		}
 
 		if ( this.props.onCaretVerticalPositionChange &&
-			this.selectionEndCaretY != event.nativeEvent.selectionEndCaretY ) {
+			this.selectionEndCaretY !== event.nativeEvent.selectionEndCaretY ) {
 			const caretY = event.nativeEvent.selectionEndCaretY;
 			this.props.onCaretVerticalPositionChange( event.target, caretY, this.selectionEndCaretY );
 			this.selectionEndCaretY = caretY;
@@ -140,12 +141,13 @@ class AztecView extends React.Component {
 		return focusedField && ( focusedField === ReactNative.findNodeHandle( this ) );
 	}
 
-	_onPress = ( event ) => {
-		this.focus( event ); // Call to move the focus in RN way (TextInputState)
+	_onPress = ( event: GestureResponderEvent ) => {
+		this.focus(); // Call to move the focus in RN way (TextInputState)
 		this._onFocus( event ); // Check if there are listeners set on the focus event
 	}
 
 	render() {
+		// eslint-disable-next-line no-unused-vars
 		const { onActiveFormatsChange, ...otherProps } = this.props;
 		return (
 			<TouchableWithoutFeedback onPress={ this._onPress }>
