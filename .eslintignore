@@ -2,6 +2,8 @@
 gutenberg
 symlinked-packages
 symlinked-packages-in-parent
-react-native-aztec
+react-native-aztec/ios
+react-native-aztec/android
+react-native-aztec/example
 bundle
 react-native-aztec-old-submodule
