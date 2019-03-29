@@ -3,7 +3,7 @@ import React from 'react';
 import ReactNative, {requireNativeComponent, ViewPropTypes, UIManager, ColorPropType, TouchableWithoutFeedback, Platform} from 'react-native';
 import TextInputState from 'react-native/lib/TextInputState';
 
-const AztecManager = UIManager.getViewManagerConfig('RCTAztecView');
+const AztecManager = UIManager.RCTAztecView;
 
 class AztecView extends React.Component {
   selectionEndCaretY: number;
